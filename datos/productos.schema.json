@@ -1,0 +1,108 @@
+{
+  "_comment": "Contrato de datos de Guía3D. El scraper de enlaces de afiliado mapea a este esquema; las páginas se generan desde él (tools/build_site.py). Tres nichos comparten los grupos A/B/E; C y D son específicos de cada nicho. El comparador solo compara productos del mismo nicho.",
+  "nichos": ["impresora", "filamento", "accesorio"],
+  "grupos_comunes": {
+    "A_identidad_afiliado": {
+      "id":            { "type": "string", "required": true, "desc": "slug estable kebab-case" },
+      "nicho":          { "type": "enum", "values": ["impresora", "filamento", "accesorio"], "required": true },
+      "asin":          { "type": "string", "source": "scrape" },
+      "name":          { "type": "string", "required": true, "source": "scrape" },
+      "marca":         { "type": "string", "source": "scrape" },
+      "affiliate_url": { "type": "string", "required": true, "source": "link", "nota": "VERBATIM, nunca reescribir" },
+      "affiliate_tag": { "type": "string", "required": true, "source": "link" },
+      "canonical_url": { "type": "string", "source": "link" },
+      "images":        { "type": "array<string>", "source": "scrape+webp", "nota": "rutas locales assets/img/<id>-N.webp; vacío -> placeholder" },
+      "categoria":     { "type": "string", "desc": "subcategoría dentro del nicho, p.ej. 'FDM gama media', 'PLA', 'Boquillas'" },
+      "isFeatured":    { "type": "bool", "default": false },
+      "isDemo":        { "type": "bool", "default": false, "nota": "true = producto de ejemplo para maquetación, nunca un producto real; la UI lo marca de forma visible y noindexa su ficha" }
+    },
+    "B_comercial": {
+      "retailPrice":      { "type": "number", "unit": "EUR", "source": "scrape" },
+      "discountedPrice":  { "type": "number", "unit": "EUR", "source": "scrape" },
+      "rango_precio":     { "type": "enum", "values": ["bajo", "medio", "alto", "premium"], "source": "computed" },
+      "valoracion_media": { "type": "number", "unit": "estrellas", "source": "scrape" },
+      "resenas_cantidad": { "type": "int", "source": "scrape" },
+      "precio_fecha":     { "type": "date", "source": "computed", "nota": "fecha de captura; el precio es orientativo" }
+    },
+    "E_editorial": {
+      "description":         { "type": "string", "desc": "2-4 frases" },
+      "cuerpo_editorial":    { "type": "html", "desc": "párrafos reales, tono blog" },
+      "pros":                { "type": "array<string>" },
+      "contras":             { "type": "array<string>" },
+      "ideal_para":          { "type": "string" },
+      "destacado_editorial": { "type": "string" },
+      "resenas_resumen":     { "type": "string", "desc": "resumen de reseñas scrapeadas, jamás inventado" }
+    }
+  },
+  "grupos_por_nicho": {
+    "impresora": {
+      "C_specs": {
+        "tipo":                 { "type": "enum", "values": ["FDM", "Resina"] },
+        "cama_x_mm":            { "type": "int", "unit": "mm" },
+        "cama_y_mm":            { "type": "int", "unit": "mm" },
+        "cama_z_mm":            { "type": "int", "unit": "mm" },
+        "auto_nivelado":        { "type": "bool" },
+        "cama_caliente_max_c":  { "type": "int", "unit": "°C" },
+        "velocidad_max_mms":    { "type": "int", "unit": "mm/s", "mejor": "max" },
+        "extrusor":             { "type": "enum", "values": ["directo", "bowden"] },
+        "pantalla":             { "type": "bool" },
+        "diametro_filamento_mm": { "type": "enum", "values": [1.75, 2.85] },
+        "nivel_ruido_db":       { "type": "number", "unit": "dB", "mejor": "min" },
+        "peso_kg":              { "type": "number", "unit": "kg" },
+        "garantia_meses":       { "type": "int", "unit": "meses", "mejor": "max" },
+        "specs_extra":          { "type": "object" }
+      },
+      "D_scores": {
+        "score_facilidad_uso":    { "from": "auto_nivelado + pantalla + montaje" },
+        "score_calidad_impresion": { "from": "tipo + extrusor + reputación" },
+        "score_velocidad":        { "from": "velocidad_max_mms" },
+        "score_fiabilidad":       { "from": "reseñas + comunidad + repuestos" },
+        "score_calidad_precio":   { "from": "specs vs precio" }
+      }
+    },
+    "filamento": {
+      "C_specs": {
+        "material":              { "type": "enum", "values": ["PLA", "PETG", "ABS", "TPU", "ASA"] },
+        "diametro_mm":           { "type": "enum", "values": [1.75, 2.85] },
+        "peso_g":                { "type": "int", "unit": "g" },
+        "tolerancia_diametro_mm": { "type": "number", "unit": "mm", "mejor": "min" },
+        "temp_boquilla_min_c":   { "type": "int", "unit": "°C" },
+        "temp_boquilla_max_c":   { "type": "int", "unit": "°C" },
+        "temp_cama_c":           { "type": "int", "unit": "°C" },
+        "color":                 { "type": "string" },
+        "specs_extra":           { "type": "object" }
+      },
+      "D_scores": {
+        "score_facilidad_impresion": { "from": "material + tolerancia" },
+        "score_acabado":            { "from": "reseñas + material" },
+        "score_resistencia":        { "from": "material" },
+        "score_consistencia":       { "from": "tolerancia_diametro_mm + reseñas" },
+        "score_calidad_precio":     { "from": "precio por kg vs mercado" }
+      }
+    },
+    "accesorio": {
+      "C_specs": {
+        "tipo_accesorio":  { "type": "string", "desc": "p.ej. Boquillas, Espátula, Calibre digital, Caja seca" },
+        "compatibilidad":  { "type": "string", "desc": "Universal o marca/modelo concreto" },
+        "material":        { "type": "string" },
+        "cantidad":        { "type": "string", "desc": "p.ej. '5 unidades', '1 kg gel de sílice'" },
+        "specs_extra":     { "type": "object" }
+      },
+      "D_scores": {
+        "score_utilidad":            { "from": "frecuencia de uso real" },
+        "score_calidad_construccion": { "from": "material + reseñas" },
+        "score_facilidad_uso":       { "from": "reseñas" },
+        "score_calidad_precio":      { "from": "precio vs alternativas" }
+      }
+    }
+  },
+  "reglas": [
+    "Todo dato no obtenido => null (la UI muestra '—'). Nunca inventar.",
+    "isDemo:true jamás lleva specs ni reseñas que parezcan reales: textos de ejemplo explícitos ('Ventaja de ejemplo A'), sin marca ni ASIN, ficha con noindex y aviso visible.",
+    "Los scores son editoriales y comparables SOLO entre productos del mismo nicho; recalcular al cambiar el catálogo de ese nicho.",
+    "affiliate_url y affiliate_tag se preservan tal cual; cada botón de compra los usa.",
+    "El precio es una instantánea con precio_fecha; etiquetarlo como orientativo.",
+    "specs no mapeables van a specs_extra como texto, jamás forzadas a un campo numérico.",
+    "El comparador solo enfrenta productos del mismo campo 'nicho'."
+  ]
+}
