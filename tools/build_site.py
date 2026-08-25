@@ -127,6 +127,14 @@ def esc(s):
     return html.escape(str(s), quote=True) if s is not None else ""
 
 
+def is_activo(p):
+    """False = producto oculto (p.ej. sin enlace de afiliado válido todavía).
+    No aparece en home, categorías, comparador, ofertas ni guías, pero su
+    ficha se sigue generando (noindex,nofollow) para poder reactivarlo sin
+    perder datos: basta con poner "activo": true en productos.json."""
+    return p.get("activo", True) is not False
+
+
 def slug_ficha(p):
     return "producto-" + p["id"] + ".html"
 
@@ -368,6 +376,10 @@ def build_ficha(p):
         demo_banner = ('<div class="demo-banner"><strong>Producto de ejemplo.</strong> Esta ficha muestra cómo se '
                         'verá una página de producto real cuando añadamos tus enlaces de afiliado de Amazon. '
                         'Ningún dato de esta ficha (specs, texto, puntuaciones) corresponde a un producto real.</div>')
+    elif not is_activo(p):
+        motivo = p.get("motivo_oculto") or "Pendiente de enlace de afiliado válido de Amazon.es"
+        demo_banner = (f'<div class="demo-banner"><strong>Producto oculto.</strong> {esc(motivo)}. '
+                        'No aparece en home, categorías, comparador, ofertas ni guías hasta que se reactive.</div>')
 
     spec_rows = SPEC_FIELDS[nicho]
     groups = {}
@@ -472,14 +484,14 @@ def build_ficha(p):
 
     title = f'{p["name"]} — ficha y valoración | Guía3D'
     desc = (p.get("description") or "")[:155]
-    robots = "noindex, nofollow" if is_demo else "index, follow"
+    robots = "noindex, nofollow" if (is_demo or not is_activo(p)) else "index, follow"
     return page_shell(title, desc, slug_ficha(p), body, robots=robots, extra_head=jsonld)
 
 
 # ---------------------------------------------------------------- category pages
 
 def build_category(nicho):
-    items = [p for p in PRODUCTOS if p["nicho"] == nicho]
+    items = [p for p in PRODUCTOS if p["nicho"] == nicho and is_activo(p)]
     cards = "\n".join(product_card_html(p) for p in items)
     empty = ""
     if not items:
@@ -511,7 +523,7 @@ def build_category(nicho):
 # ---------------------------------------------------------------- home
 
 def build_home():
-    featured = [p for p in PRODUCTOS if p.get("isFeatured")][:6]
+    featured = [p for p in PRODUCTOS if p.get("isFeatured") and is_activo(p)][:6]
     cards = "\n".join(product_card_html(p) for p in featured)
     demo_note = ""
     if featured and all(p.get("isDemo") for p in featured):
@@ -593,7 +605,7 @@ def build_comparador():
     )
     checklists = ""
     for n in NICHOS:
-        items = [p for p in PRODUCTOS if p["nicho"] == n]
+        items = [p for p in PRODUCTOS if p["nicho"] == n and is_activo(p)]
         rows = "".join(f'''<label class="comparador-check-item">
           <input type="checkbox" data-compare-check value="{esc(p["id"])}">
           {esc(p["name"])}
@@ -632,7 +644,7 @@ def build_comparador():
 # ---------------------------------------------------------------- buying guide
 
 def build_guide():
-    impresoras = [p for p in PRODUCTOS if p["nicho"] == "impresora"]
+    impresoras = [p for p in PRODUCTOS if p["nicho"] == "impresora" and is_activo(p)]
     demo_note = ""
     if impresoras and all(p.get("isDemo") for p in impresoras):
         demo_note = '<div class="demo-banner"><strong>Catálogo de ejemplo.</strong> Las recomendaciones de abajo son productos de muestra, pendientes de sustituir por modelos reales.</div>'
@@ -697,7 +709,7 @@ def build_guide():
 # ---------------------------------------------------------------- ofertas
 
 def build_ofertas():
-    ofertas = [p for p in PRODUCTOS if p.get("discountedPrice") is not None and p.get("retailPrice") is not None and p["discountedPrice"] < p["retailPrice"]]
+    ofertas = [p for p in PRODUCTOS if is_activo(p) and p.get("discountedPrice") is not None and p.get("retailPrice") is not None and p["discountedPrice"] < p["retailPrice"]]
     if ofertas:
         cards = "\n".join(product_card_html(p) for p in ofertas)
         content = f'<div class="catalog-grid">{cards}</div>'

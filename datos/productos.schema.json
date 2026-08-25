@@ -14,7 +14,9 @@
       "images":        { "type": "array<string>", "source": "scrape+webp", "nota": "rutas locales assets/img/<id>-N.webp; vacío -> placeholder" },
       "categoria":     { "type": "string", "desc": "subcategoría dentro del nicho, p.ej. 'FDM gama media', 'PLA', 'Boquillas'" },
       "isFeatured":    { "type": "bool", "default": false },
-      "isDemo":        { "type": "bool", "default": false, "nota": "true = producto de ejemplo para maquetación, nunca un producto real; la UI lo marca de forma visible y noindexa su ficha" }
+      "isDemo":        { "type": "bool", "default": false, "nota": "true = producto de ejemplo para maquetación, nunca un producto real; la UI lo marca de forma visible y noindexa su ficha" },
+      "activo":        { "type": "bool", "default": true, "nota": "false = oculto de home, categorías, comparador, ofertas y guías (no aparece en ningún listado público). Su ficha se sigue generando pero con noindex,nofollow y sin enlaces entrantes, para poder previsualizarla y reactivarla poniendo activo:true sin perder ningún dato. Usar cuando falta affiliate_url/asin real, nunca borrar el producto." },
+      "motivo_oculto": { "type": "string", "source": "manual", "nota": "opcional, por qué está oculto, p.ej. 'Pendiente de enlace de afiliado válido de Amazon.es'" }
     },
     "B_comercial": {
       "retailPrice":      { "type": "number", "unit": "EUR", "source": "scrape" },
