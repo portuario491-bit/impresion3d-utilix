@@ -28,8 +28,25 @@ with open(DATOS_PATH, encoding="utf-8") as f:
 NICHOS = ["impresora", "filamento", "accesorio"]
 NICHO_LABEL = {"impresora": "Impresoras 3D", "filamento": "Filamento", "accesorio": "Accesorios"}
 NICHO_LABEL_SING = {"impresora": "impresora", "filamento": "filamento", "accesorio": "accesorio"}
-NICHO_ICON = {"impresora": "🖨️", "filamento": "🧵", "accesorio": "🧰"}
 NICHO_SLUG_PAGE = {"impresora": "categoria-impresoras.html", "filamento": "categoria-filamento.html", "accesorio": "categoria-accesorios.html"}
+
+ICONS_SVG = {
+    "impresora": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="5" y="13" width="14" height="8" rx="1"/><path d="M6 9H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2M18 9h2a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2"/><circle cx="16.5" cy="11.5" r=".5" fill="currentColor"/></svg>',
+    "filamento": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="6.5" ry="2.5"/><ellipse cx="12" cy="18.5" rx="6.5" ry="2.5"/><path d="M5.5 5.5v13M18.5 5.5v13"/><path d="M9 6c0 2.5 6 2.5 6 5.5S9 14.5 9 17"/></svg>',
+    "accesorio": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="19" height="11" rx="1.5"/><path d="M8 8.5V6.5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M2.5 13h19M10.5 13v2M13.5 13v2"/></svg>',
+    "comparador": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M4.5 21h15"/><path d="M2.5 7h6M15.5 7h6"/><path d="M5.5 7l-3 6a3.2 3.2 0 0 0 6 0z"/><path d="M18.5 7l-3 6a3.2 3.2 0 0 0 6 0z"/></svg>',
+    "ofertas": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.4 12.9 11.6 4.1a2 2 0 0 0-1.4-.6H5a1 1 0 0 0-1 1v5.2c0 .5.2 1 .6 1.4l8.8 8.8a2 2 0 0 0 2.8 0l4.2-4.2a2 2 0 0 0 0-2.8Z"/><circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none"/></svg>',
+    "paquete": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
+    "escudo": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+}
+
+
+def icon_svg(name, cls=""):
+    svg = ICONS_SVG.get(name, ICONS_SVG["paquete"])
+    return svg.replace("<svg ", f'<svg class="{cls}" ', 1) if cls else svg
+
+
+NICHO_ICON = {"impresora": ICONS_SVG["impresora"], "filamento": ICONS_SVG["filamento"], "accesorio": ICONS_SVG["accesorio"]}
 
 SCORE_AXES = {
     "impresora": [
@@ -169,8 +186,7 @@ def media_html(p, css_class="product-card-media"):
     imgs = p.get("images") or []
     if imgs:
         return f'<div class="{css_class}"><img src="{esc(imgs[0])}" alt="{esc(p["name"])}" loading="lazy" decoding="async"></div>'
-    icon = NICHO_ICON.get(p["nicho"], "📦")
-    return f'<div class="{css_class}">{icon}</div>'
+    return f'<div class="{css_class}">{icon_svg(p["nicho"], "icon-nicho")}</div>'
 
 
 def radar_canvas_html(elem_id, extra_class=""):
@@ -344,7 +360,7 @@ def build_ficha(p):
         main_img = f'<img class="ficha-img-main" src="{esc(imgs[0])}" alt="{esc(p["name"])}" fetchpriority="high">'
         thumbs = "".join(f'<li><img src="{esc(u)}" alt="" class="{"is-active" if i == 0 else ""}"></li>' for i, u in enumerate(imgs))
     else:
-        main_img = f'<div class="ficha-img-placeholder">{NICHO_ICON.get(nicho, "📦")}</div>'
+        main_img = f'<div class="ficha-img-placeholder">{icon_svg(nicho, "icon-placeholder")}</div>'
         thumbs = ""
 
     demo_banner = ""
@@ -467,7 +483,7 @@ def build_category(nicho):
     cards = "\n".join(product_card_html(p) for p in items)
     empty = ""
     if not items:
-        empty = f'<div class="empty-state"><div class="empty-icon">{NICHO_ICON[nicho]}</div><p>Todavía no hay productos en esta categoría. Vuelve pronto.</p></div>'
+        empty = f'<div class="empty-state"><div class="empty-icon">{icon_svg(nicho, "icon-empty")}</div><p>Todavía no hay productos en esta categoría. Vuelve pronto.</p></div>'
     demo_note = ""
     if all(p.get("isDemo") for p in items) and items:
         demo_note = '<div class="demo-banner"><strong>Catálogo de ejemplo.</strong> Los productos de esta página son de muestra, pendientes de sustituir por productos reales con enlaces de afiliado.</div>'
@@ -498,7 +514,7 @@ def build_home():
     featured = [p for p in PRODUCTOS if p.get("isFeatured")][:6]
     cards = "\n".join(product_card_html(p) for p in featured)
     cat_cards = "\n".join(f"""<a class="guide-card" href="{NICHO_SLUG_PAGE[n]}">
-      <span class="guide-card-icon" aria-hidden="true">{NICHO_ICON[n]}</span>
+      <span class="guide-card-icon" aria-hidden="true">{icon_svg(n, "icon-guide")}</span>
       <h2>{NICHO_LABEL[n]}</h2>
       <p>{CATEGORY_INTRO_SHORT[n]}</p>
       <span class="card-cta">Ver {NICHO_LABEL[n].lower()} →</span>
@@ -506,6 +522,7 @@ def build_home():
 
     body = f"""<main id="hub">
   <section class="hero container-wide">
+    <span class="hero-kicker">{icon_svg("escudo")} Puntuaciones y specs reales, sin productos inventados</span>
     <h1>Compara impresoras 3D, filamento y accesorios antes de comprar</h1>
     <p class="hero-sub">Fichas completas, puntuaciones del editor y un comparador lado a lado para decidir con datos, no con intuición.</p>
   </section>
@@ -540,17 +557,17 @@ def build_home():
     <h2>Guías de compra</h2>
     <div class="more-grid">
       <a class="more-card" href="guia-mejor-impresora-2026.html">
-        <span class="card-icon" aria-hidden="true">🖨️</span>
+        <span class="card-icon" aria-hidden="true">{icon_svg("impresora", "icon-more")}</span>
         <h3>Mejor impresora 3D para empezar 2026</h3>
         <p>Nuestra recomendación por presupuesto y tipo de uso.</p>
       </a>
       <a class="more-card" href="comparador.html">
-        <span class="card-icon" aria-hidden="true">⚖️</span>
+        <span class="card-icon" aria-hidden="true">{icon_svg("comparador", "icon-more")}</span>
         <h3>Comparador</h3>
         <p>Enfrenta varios productos lado a lado, con gráficos superpuestos.</p>
       </a>
       <a class="more-card" href="ofertas.html">
-        <span class="card-icon" aria-hidden="true">🏷️</span>
+        <span class="card-icon" aria-hidden="true">{icon_svg("ofertas", "icon-more")}</span>
         <h3>Ofertas</h3>
         <p>Productos con descuento respecto a su precio habitual.</p>
       </a>
@@ -568,7 +585,7 @@ def build_home():
 
 def build_comparador():
     tabs = "\n      ".join(
-        f'<button type="button" data-nicho-tab="{n}" class="{"is-active" if i == 0 else ""}">{NICHO_ICON[n]} {NICHO_LABEL[n]}</button>'
+        f'<button type="button" data-nicho-tab="{n}" class="{"is-active" if i == 0 else ""}">{icon_svg(n, "icon-tab")} {NICHO_LABEL[n]}</button>'
         for i, n in enumerate(NICHOS)
     )
     checklists = ""
@@ -597,7 +614,7 @@ def build_comparador():
     </div>
 
     <div id="comparadorResult" class="comparador-result" data-comparador-root>
-      <div class="comparador-empty empty-state"><div class="empty-icon">⚖️</div><p>Selecciona al menos 2 productos del mismo tipo para ver la comparativa.</p></div>
+      <div class="comparador-empty empty-state"><div class="empty-icon">{icon_svg("comparador", "icon-empty")}</div><p>Selecciona al menos 2 productos del mismo tipo para ver la comparativa.</p></div>
     </div>
   </div>
   {ad_slot_html()}
@@ -679,7 +696,7 @@ def build_ofertas():
         cards = "\n".join(product_card_html(p) for p in ofertas)
         content = f'<div class="catalog-grid">{cards}</div>'
     else:
-        content = '<div class="empty-state"><div class="empty-icon">🏷️</div><p>Todavía no tenemos ofertas activas registradas. Vuelve pronto — en cuanto añadamos productos reales, las rebajas aparecerán aquí automáticamente.</p></div>'
+        content = f'<div class="empty-state"><div class="empty-icon">{icon_svg("ofertas", "icon-empty")}</div><p>Todavía no tenemos ofertas activas registradas. Vuelve pronto — en cuanto añadamos productos reales, las rebajas aparecerán aquí automáticamente.</p></div>'
 
     body = f"""<main id="contenido">
   <section class="page-hero container-wide">
