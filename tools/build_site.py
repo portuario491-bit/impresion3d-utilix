@@ -513,6 +513,9 @@ def build_category(nicho):
 def build_home():
     featured = [p for p in PRODUCTOS if p.get("isFeatured")][:6]
     cards = "\n".join(product_card_html(p) for p in featured)
+    demo_note = ""
+    if featured and all(p.get("isDemo") for p in featured):
+        demo_note = '<div class="demo-banner"><strong>Catálogo de ejemplo.</strong> Los productos que ves ahora son de muestra para enseñar cómo funciona la web — pronto los sustituiremos por productos reales de Amazon.</div>'
     cat_cards = "\n".join(f"""<a class="guide-card" href="{NICHO_SLUG_PAGE[n]}">
       <span class="guide-card-icon" aria-hidden="true">{icon_svg(n, "icon-guide")}</span>
       <h2>{NICHO_LABEL[n]}</h2>
@@ -534,7 +537,7 @@ def build_home():
       </section>
 
       <h2 style="font-size:1.3rem;margin-bottom:1rem;">Destacados</h2>
-      <div class="demo-banner"><strong>Catálogo de ejemplo.</strong> Los productos que ves ahora son de muestra para enseñar cómo funciona la web — pronto los sustituiremos por productos reales de Amazon.</div>
+      {demo_note}
       <div class="catalog-grid">
         {cards}
       </div>
@@ -630,6 +633,9 @@ def build_comparador():
 
 def build_guide():
     impresoras = [p for p in PRODUCTOS if p["nicho"] == "impresora"]
+    demo_note = ""
+    if impresoras and all(p.get("isDemo") for p in impresoras):
+        demo_note = '<div class="demo-banner"><strong>Catálogo de ejemplo.</strong> Las recomendaciones de abajo son productos de muestra, pendientes de sustituir por modelos reales.</div>'
     shortlist = "\n".join(f"""<article class="product-card">
       {'<span class="demo-ribbon">EJEMPLO</span>' if p.get("isDemo") else ""}
       {media_html(p)}
@@ -658,7 +664,7 @@ def build_guide():
         <li><strong>Nivel de ruido y comunidad:</strong> importa si la impresora va a estar en una zona habitada, y ayuda tener repuestos fáciles de encontrar.</li>
       </ul>
 
-      <div class="demo-banner"><strong>Catálogo de ejemplo.</strong> Las recomendaciones de abajo son productos de muestra, pendientes de sustituir por modelos reales.</div>
+      {demo_note}
 
       <h2>Nuestra selección</h2>
       <div class="catalog-grid">
