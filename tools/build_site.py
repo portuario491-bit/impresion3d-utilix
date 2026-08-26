@@ -107,9 +107,9 @@ SPEC_FIELDS = {
 }
 
 CATEGORY_INTRO = {
-    "impresora": "Comparativa de impresoras 3D FDM y de resina: cama de impresión, auto-nivelado, velocidad y fiabilidad, para elegir sin sorpresas. Consulta también la <a href=\"guia-mejor-impresora-2026.html\">guía de compra</a> si es tu primera impresora.",
-    "filamento": "PLA, PETG, ABS, TPU: qué filamento usar según lo que vayas a imprimir, con temperaturas y consistencia de diámetro comparadas.",
-    "accesorio": "Boquillas, herramientas y almacenaje: los accesorios que de verdad hacen falta para imprimir sin sobresaltos.",
+    "impresora": "Comparativa de impresoras 3D FDM y de resina: cama de impresión, auto-nivelado, velocidad y fiabilidad, para elegir sin sorpresas. Consulta también <a href=\"como-elegir-tu-primera-impresora-3d.html\">cómo elegir tu primera impresora</a> o <a href=\"que-impresora-3d-comprar.html\">qué impresora comprar</a> si aún no lo tienes claro.",
+    "filamento": "PLA, PETG, ABS, TPU: qué filamento usar según lo que vayas a imprimir, con temperaturas y consistencia de diámetro comparadas. Ver también <a href=\"mejor-filamento-pla-calidad-precio.html\">mejor PLA calidad-precio</a>.",
+    "accesorio": "Boquillas, herramientas y almacenaje: los accesorios que de verdad hacen falta para imprimir sin sobresaltos. Ver también <a href=\"accesorios-imprescindibles-para-impresora-3d.html\">accesorios imprescindibles</a>.",
 }
 
 CATEGORY_INTRO_SHORT = {
@@ -317,6 +317,55 @@ def ad_slot_html(sidebar=False):
 </div>"""
 
 
+# ---------------------------------------------------------------- schema.org helpers
+
+def breadcrumb_jsonld(items):
+    """items: lista de (nombre, path-relativo-o-None-para-el-actual)."""
+    entries = []
+    for i, (name, path) in enumerate(items, start=1):
+        entry = {"@type": "ListItem", "position": i, "name": name}
+        if path:
+            entry["item"] = f"{SITE_URL}/{path}"
+        entries.append(entry)
+    data = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": entries}
+    return f'<script type="application/ld+json">{json.dumps(data, ensure_ascii=False)}</script>'
+
+
+def itemlist_jsonld(products, name=None):
+    entries = [
+        {"@type": "ListItem", "position": i, "url": f"{SITE_URL}/{slug_ficha(p)}", "name": p["name"]}
+        for i, p in enumerate(products, start=1)
+    ]
+    data = {"@context": "https://schema.org", "@type": "ItemList", "itemListElement": entries}
+    if name:
+        data["name"] = name
+    return f'<script type="application/ld+json">{json.dumps(data, ensure_ascii=False)}</script>'
+
+
+def article_jsonld(title, description, path, date_published=None):
+    """date_published: ISO date real (día en que se publicó de verdad). Si no se conoce
+    con certeza (p.ej. contenido preexistente sin fecha registrada), se omite en vez
+    de inventarla — Google trata datePublished ausente mejor que uno incorrecto."""
+    data = {
+        "@context": "https://schema.org", "@type": "Article",
+        "headline": title, "description": description,
+        "mainEntityOfPage": {"@type": "WebPage", "@id": f"{SITE_URL}/{path}"},
+        "dateModified": datetime.date.today().isoformat(),
+        "author": {"@type": "Organization", "name": "Guía3D"},
+        "publisher": {"@type": "Organization", "name": "Guía3D"},
+    }
+    if date_published:
+        data["datePublished"] = date_published
+    return f'<script type="application/ld+json">{json.dumps(data, ensure_ascii=False)}</script>'
+
+
+def comparar_cta_html(nicho, ids, label="Comparar estos modelos en el comparador →"):
+    """CTA que enlaza al comparador con los productos ya preseleccionados (?nicho=&ids=)."""
+    ids_param = ",".join(ids)
+    return (f'<a class="btn-comprar btn-comparar-cta" href="comparador.html?nicho={nicho}&amp;ids={esc(ids_param)}">'
+            f'{esc(label)}</a>')
+
+
 def write(rel_path, content):
     full = os.path.join(ROOT, rel_path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
@@ -406,6 +455,20 @@ def build_ficha(p):
     if p.get("resenas_resumen"):
         resenas_html = f'<section class="ficha-resenas"><h2>Qué dicen los compradores</h2><p class="resenas-resumen">{esc(p["resenas_resumen"])}</p><p class="radar-note">Reseñas mostradas en Amazon en el momento de la captura.</p></section>'
 
+    ARTICULOS_POR_NICHO = {
+        "impresora": [
+            ("que-impresora-3d-comprar.html", "Qué impresora 3D comprar"),
+            ("mejor-impresora-3d-calidad-precio.html", "Mejor impresora 3D calidad-precio"),
+        ],
+        "filamento": [("mejor-filamento-pla-calidad-precio.html", "Mejor filamento PLA calidad-precio")],
+        "accesorio": [("accesorios-imprescindibles-para-impresora-3d.html", "Accesorios imprescindibles")],
+    }
+    articulos_html = ""
+    enlaces_art = ARTICULOS_POR_NICHO.get(nicho) or []
+    if enlaces_art and not is_demo:
+        items = "".join(f'<li><a href="{href}">{esc(txt)}</a></li>' for href, txt in enlaces_art)
+        articulos_html = f'<section class="ficha-resenas"><h2>Guías relacionadas</h2><ul>{items}</ul></section>'
+
     axes = SCORE_AXES[nicho]
     legend = "".join(
         f'<span><span class="dot" style="background:{RADAR_COLORS[0]}"></span>{esc(label)}: {p.get(f) if p.get(f) is not None else "—"}/10</span>'
@@ -423,6 +486,7 @@ def build_ficha(p):
             "aggregateRating": {"@type": "AggregateRating", "ratingValue": str(p.get("valoracion_media")), "reviewCount": str(p.get("resenas_cantidad") or 1)}
         }, ensure_ascii=False, indent=2)}
 </script>"""
+    jsonld += breadcrumb_jsonld([("Guía3D", "index.html"), (NICHO_LABEL[nicho], NICHO_SLUG_PAGE[nicho]), (p["name"], None)])
 
     body = f"""<main id="contenido" class="container-wide">
   <p class="breadcrumb" style="margin-top:1rem;"><a href="index.html">Guía3D</a> / <a href="{NICHO_SLUG_PAGE[nicho]}">{NICHO_LABEL[nicho]}</a> / {esc(p["name"])}</p>
@@ -469,7 +533,7 @@ def build_ficha(p):
       <p class="ideal-para"><strong>Ideal para:</strong> {esc(p.get("ideal_para") or "")}</p>
     </section>
 
-    <div class="container">{resenas_html}</div>
+    <div class="container">{resenas_html}{articulos_html}</div>
 
     <div class="container">
       <section class="ficha-comparar">
@@ -517,7 +581,10 @@ def build_category(nicho):
 </main>"""
     title = f"{NICHO_LABEL[nicho]}: comparativa y opiniones | Guía3D"
     desc = CATEGORY_INTRO_SHORT[nicho]
-    return page_shell(title, desc, NICHO_SLUG_PAGE[nicho], body)
+    schema = breadcrumb_jsonld([("Guía3D", "index.html"), (NICHO_LABEL[nicho], None)])
+    if items:
+        schema += itemlist_jsonld(items, name=NICHO_LABEL[nicho])
+    return page_shell(title, desc, NICHO_SLUG_PAGE[nicho], body, extra_head=schema)
 
 
 # ---------------------------------------------------------------- home
@@ -571,10 +638,20 @@ def build_home():
   <section class="more-section container-wide">
     <h2>Guías de compra</h2>
     <div class="more-grid">
-      <a class="more-card" href="guia-mejor-impresora-2026.html">
+      <a class="more-card" href="como-elegir-tu-primera-impresora-3d.html">
+        <span class="card-icon" aria-hidden="true">{icon_svg("escudo", "icon-more")}</span>
+        <h3>Cómo elegir tu primera impresora 3D</h3>
+        <p>La guía completa: qué mirar antes de comprar.</p>
+      </a>
+      <a class="more-card" href="que-impresora-3d-comprar.html">
         <span class="card-icon" aria-hidden="true">{icon_svg("impresora", "icon-more")}</span>
-        <h3>Mejor impresora 3D para empezar 2026</h3>
-        <p>Nuestra recomendación por presupuesto y tipo de uso.</p>
+        <h3>Qué impresora 3D comprar</h3>
+        <p>Árbol de decisión rápido por presupuesto y uso.</p>
+      </a>
+      <a class="more-card" href="mejor-impresora-3d-calidad-precio.html">
+        <span class="card-icon" aria-hidden="true">{icon_svg("escudo", "icon-more")}</span>
+        <h3>Mejor impresora 3D calidad-precio</h3>
+        <p>Ranking por relación entre specs y precio.</p>
       </a>
       <a class="more-card" href="comparador.html">
         <span class="card-icon" aria-hidden="true">{icon_svg("comparador", "icon-more")}</span>
@@ -634,10 +711,11 @@ def build_comparador():
   </div>
   {ad_slot_html()}
 </main>"""
+    schema = breadcrumb_jsonld([("Guía3D", "index.html"), ("Comparador", None)])
     return page_shell(
         "Comparador de impresoras 3D, filamento y accesorios | Guía3D",
         "Compara varios productos lado a lado: ficha técnica completa y gráfico de valoración superpuesto.",
-        "comparador.html", body,
+        "comparador.html", body, extra_head=schema,
     )
 
 
@@ -699,10 +777,16 @@ def build_guide():
     </div>
   </section>
 </main>"""
+    schema = breadcrumb_jsonld([("Guía3D", "index.html"), ("Guías", None), ("Mejor impresora 2026", None)])
+    schema += article_jsonld(
+        "Mejor impresora 3D para empezar 2026",
+        "Guía de compra: qué impresora 3D elegir según tu presupuesto y tipo de uso.",
+        "guia-mejor-impresora-2026.html",
+    )  # datePublished real desconocida (contenido preexistente) -> se omite, no se inventa
     return page_shell(
         "Mejor impresora 3D para empezar 2026 | Guía3D",
         "Guía de compra: qué impresora 3D elegir según tu presupuesto y tipo de uso, con nuestra selección comparada.",
-        "guia-mejor-impresora-2026.html", body,
+        "guia-mejor-impresora-2026.html", body, extra_head=schema,
     )
 
 
@@ -725,10 +809,11 @@ def build_ofertas():
   <div class="container-wide">{content}</div>
   {ad_slot_html()}
 </main>"""
+    schema = breadcrumb_jsonld([("Guía3D", "index.html"), ("Ofertas", None)])
     return page_shell(
         "Ofertas en impresoras 3D, filamento y accesorios | Guía3D",
         "Productos de impresión 3D con descuento respecto a su precio habitual en Amazon.es.",
-        "ofertas.html", body,
+        "ofertas.html", body, extra_head=schema,
     )
 
 
@@ -747,6 +832,444 @@ def build_db_js():
         "updated": datetime.date.today().isoformat(),
     }
     return "(function () {\n  \"use strict\";\n  window.__DB__ = " + json.dumps(payload, ensure_ascii=False, indent=2) + ";\n})();\n"
+
+
+# ---------------------------------------------------------------- artículos (comparativas y guías de compra)
+
+def producto(pid):
+    for p in PRODUCTOS:
+        if p["id"] == pid:
+            return p
+    raise KeyError(pid)
+
+
+ARTICULOS = []  # se rellena con cada build_art_*(); (slug, title_seo) para sitemap/hub
+
+
+def registrar(slug, title_seo):
+    ARTICULOS.append((slug, title_seo))
+
+
+def mini_card_html(p):
+    return f"""<a class="more-card" href="{slug_ficha(p)}">
+    {media_html(p, css_class="guide-card-icon")}
+    <h3>{esc(p["name"])}</h3>
+    <p>{esc(p.get("destacado_editorial") or "")}</p>
+  </a>"""
+
+
+def related_section(products, title="Alternativas relacionadas"):
+    cards = "\n".join(mini_card_html(p) for p in products)
+    return f"""<section class="more-section">
+      <h2>{esc(title)}</h2>
+      <div class="more-grid">{cards}</div>
+    </section>"""
+
+
+def quick_answer(html_text):
+    return f'<div class="demo-banner" style="background:var(--surface-soft);border-color:var(--border);"><strong>Respuesta rápida:</strong> {html_text}</div>'
+
+
+def article_page(slug, title, meta_desc, breadcrumb_items, h1, hero_sub, prose_html, extra_schema=""):
+    schema = breadcrumb_jsonld(breadcrumb_items)
+    schema += article_jsonld(title, meta_desc, slug, datetime.date.today().isoformat())
+    schema += extra_schema
+    crumbs = " / ".join(
+        f'<a href="{p}">{esc(n)}</a>' if p else esc(n) for n, p in breadcrumb_items
+    )
+    body = f"""<main id="contenido">
+  <section class="page-hero container-wide">
+    <p class="breadcrumb">{crumbs}</p>
+    <h1>{esc(h1)}</h1>
+    <p class="hero-sub">{esc(hero_sub)}</p>
+  </section>
+  <div class="article-layout container-wide">
+    <div class="prose">
+      {prose_html}
+    </div>
+    <aside class="sidebar-ad-slot" aria-label="Publicidad">
+      {ad_slot_html(sidebar=True)}
+    </aside>
+  </div>
+  {ad_slot_html()}
+</main>"""
+    registrar(slug, title)
+    return page_shell(title, meta_desc, slug, body, extra_head=schema)
+
+
+def spec_diff_table(products, fields):
+    """fields: lista de (campo, etiqueta, unidad, mejor). products: lista de dicts producto."""
+    head = "<tr><th>Especificación</th>" + "".join(f"<th>{esc(p['name'])}</th>" for p in products) + "</tr>"
+    rows = ""
+    for field, label, unit, _group, better in fields:
+        vals = [p.get(field) for p in products]
+        best_idx = None
+        nums = [v for v in vals if isinstance(v, (int, float)) and not isinstance(v, bool)]
+        if better and nums:
+            target = max(nums) if better == "max" else min(nums)
+            best_idx = [i for i, v in enumerate(vals) if v == target]
+        cells = ""
+        for i, v in enumerate(vals):
+            disp = fmt_val(v, unit)
+            cls = ' class="is-best"' if best_idx and i in best_idx else ""
+            cells += f"<td{cls}>{esc(disp)}</td>"
+        rows += f"<tr><th scope=\"row\">{esc(label)}</th>{cells}</tr>"
+    return f'<div class="compare-table-wrap"><table class="compare-table"><thead>{head}</thead><tbody>{rows}</tbody></table></div>'
+
+
+def precio_frase(p):
+    return fmt_eur(p.get("discountedPrice") if p.get("discountedPrice") is not None else p.get("retailPrice"))
+
+
+# ---- 1. mejor impresora 3D para principiantes -----------------------------
+
+def build_art_principiantes():
+    ender = producto("creality-ender-3-v3-se")
+    adv = producto("flashforge-adventurer-5m")
+    prose = f"""
+      {quick_answer(f'Para empezar sin gastar mucho, la <a href="{slug_ficha(ender)}">{esc(ender["name"])}</a> ({precio_frase(ender)}) es la más sencilla de nuestro catálogo por precio: nivelación automática y montaje rápido. Si el presupuesto da para más, la <a href="{slug_ficha(adv)}">{esc(adv["name"])}</a> ({precio_frase(adv)}) tiene la puntuación de facilidad de uso más alta ({adv["score_facilidad_uso"]}/10) al venir cerrada y prácticamente lista de caja.')}
+
+      <h2>Qué mirar si nunca has impreso en 3D</h2>
+      <ul>
+        <li><strong>Auto-nivelado:</strong> evita el ajuste manual de la cama, la causa más habitual de que las primeras impresiones fallen.</li>
+        <li><strong>Extrusor directo</strong> (frente a bowden): empuja el filamento con más precisión, sobre todo con materiales flexibles.</li>
+        <li><strong>Comunidad y repuestos:</strong> Creality y FlashForge tienen pieza de repuesto y tutoriales abundantes en español.</li>
+        <li><strong>Cámara cerrada:</strong> no es imprescindible para PLA, pero ayuda si más adelante imprimes PETG.</li>
+      </ul>
+
+      <h2>Nuestras dos recomendaciones, según especificaciones</h2>
+      {spec_diff_table([ender, adv], SPEC_FIELDS["impresora"])}
+      <p class="radar-note">Valoraciones editoriales de 0 a 10 calculadas a partir de las especificaciones reales de cada producto, comparables solo entre impresoras de este catálogo. Metodología en <a href="como-elegimos.html">cómo elegimos</a>.</p>
+
+      <h3>{esc(ender["name"])}: para quién es</h3>
+      <p>{esc(ender.get("ideal_para") or "")}</p>
+      <h3>{esc(adv["name"])}: para quién es</h3>
+      <p>{esc(adv.get("ideal_para") or "")}</p>
+
+      <p style="margin-top:1.4rem;">{comparar_cta_html("impresora", [ender["id"], adv["id"]], "Comparar Ender-3 V3 SE vs Adventurer 5M en el comparador →")}</p>
+      <p class="aviso-afiliados">Los botones "Ver en Amazon" son enlaces de afiliado: si compras a través de ellos, podemos recibir una comisión sin coste extra para ti.</p>
+
+      {related_section([producto("flashforge-ad5x")], "También te puede interesar")}
+
+      <section class="faq-section" style="margin-top:2rem;">
+        <h2>Preguntas frecuentes</h2>
+        <div class="faq-list">
+          <details class="faq-item"><summary>¿Necesito calibrar la impresora si tiene auto-nivelado?</summary><p>El auto-nivelado resuelve la nivelación de la cama, pero conviene ajustar el offset del eje Z y calibrar el slicer (Cura, Orca Slicer) en las primeras impresiones para sacarle el máximo partido, según indican varias reseñas de estos modelos.</p></details>
+          <details class="faq-item"><summary>¿Puedo imprimir PETG o solo PLA como principiante?</summary><p>Ambos modelos admiten PETG y TPU además de PLA, según ficha técnica. El PLA sigue siendo el más fácil para empezar por su temperatura de impresión más baja.</p></details>
+        </div>
+      </section>
+    """
+    return article_page(
+        "mejor-impresora-3d-para-principiantes.html",
+        "Mejor impresora 3D para principiantes en 2026 | Guía3D",
+        "Qué impresora 3D elegir si nunca has impreso antes: comparativa de facilidad de uso entre los modelos de nuestro catálogo, con specs reales.",
+        [("Guía3D", "index.html"), ("Guías", "guia-mejor-impresora-2026.html"), ("Mejor impresora 3D para principiantes", None)],
+        "Mejor impresora 3D para principiantes",
+        "Comparamos facilidad de uso, auto-nivelado y montaje entre las impresoras de nuestro catálogo, según sus especificaciones reales.",
+        prose,
+    )
+
+
+# ---- 2 y 3. mejores impresoras por presupuesto -----------------------------
+
+def build_art_presupuesto(limite_eur, slug, related_limite=None):
+    candidatas = [p for p in PRODUCTOS if p["nicho"] == "impresora" and is_activo(p)
+                  and (p.get("discountedPrice") or p.get("retailPrice") or 9e9) <= limite_eur]
+    siguiente = [p for p in PRODUCTOS if p["nicho"] == "impresora" and is_activo(p)
+                 and (p.get("discountedPrice") or p.get("retailPrice") or 0) > limite_eur]
+    siguiente.sort(key=lambda p: p.get("discountedPrice") or p.get("retailPrice") or 9e9)
+
+    if len(candidatas) == 1:
+        p = candidatas[0]
+        honesto = (f'<p><strong>Aviso de transparencia:</strong> ahora mismo, en nuestro catálogo, solo tenemos '
+                   f'una impresora que cueste {limite_eur}€ o menos: la <a href="{slug_ficha(p)}">{esc(p["name"])}</a> '
+                   f'a {precio_frase(p)}. Preferimos decírtelo claramente en vez de rellenar la lista con productos '
+                   f'que no vendemos. Iremos añadiendo más modelos en este rango a medida que los incorporemos.</p>')
+        pick_html = f"""<div class="catalog-grid">{product_card_html(p)}</div>"""
+    else:
+        honesto = ""
+        pick_html = f'<div class="catalog-grid">{"".join(product_card_html(p) for p in candidatas)}</div>'
+
+    sig_html = ""
+    if siguiente:
+        s = siguiente[0]
+        precio_s = s.get("discountedPrice") or s.get("retailPrice") or 0
+        stretch_pct = (precio_s - limite_eur) / limite_eur if limite_eur else 1
+        if candidatas and stretch_pct <= 0.15:
+            # está lo bastante cerca del límite como para ser una decisión real de "¿estiro o no?"
+            base = candidatas[0]
+            diff_eur = round(precio_s - limite_eur)
+            sig_html = (f'<h2>¿Merece la pena estirar {diff_eur}€ más?</h2>'
+                        f'<p>La <a href="{slug_ficha(s)}">{esc(s["name"])}</a> cuesta {precio_frase(s)} — solo '
+                        f'{diff_eur}€ más que el límite de esta página. Antes de decidir, esto es lo que cambia respecto '
+                        f'a la {esc(base["name"])}:</p>'
+                        f'{spec_diff_table([base, s], SPEC_FIELDS["impresora"])}'
+                        f'<p style="margin-top:1.4rem;">{comparar_cta_html("impresora", [base["id"], s["id"]], "Comparar ambas en el comparador →")}</p>')
+        else:
+            sig_html = (f'<h2>Si puedes estirar el presupuesto un poco más</h2>'
+                        f'<p>Por encima de los {limite_eur}€, la siguiente opción de nuestro catálogo es la '
+                        f'<a href="{slug_ficha(s)}">{esc(s["name"])}</a>, a {precio_frase(s)} — bastante por encima '
+                        f'de este rango, así que solo tiene sentido si tu presupuesto real es mayor. '
+                        f'{esc(s.get("destacado_editorial") or "")}</p>')
+
+    prose = f"""
+      {quick_answer(f'{"Nuestra recomendación por debajo de " + str(limite_eur) + "€ es la " + esc(candidatas[0]["name"]) + " (" + precio_frase(candidatas[0]) + ")." if candidatas else "Ahora mismo no tenemos ninguna impresora en este rango de precio en catálogo."}')}
+
+      {honesto}
+      <h2>Impresoras por {limite_eur}€ o menos en nuestro catálogo</h2>
+      {pick_html if candidatas else '<p>Vuelve pronto — iremos añadiendo modelos en este rango.</p>'}
+
+      {sig_html}
+
+      <h2>Qué esperar por debajo de {limite_eur}€</h2>
+      <p>En esta franja de precio, lo habitual es encontrar impresoras FDM de estructura abierta, cama de alrededor de 220×220 mm y auto-nivelado en los modelos más recientes. No suele haber cámara cerrada ni impresión multicolor — esas funciones aparecen a partir de la gama media-alta.</p>
+    """
+    return article_page(
+        slug,
+        f"Mejores impresoras 3D por menos de {limite_eur} euros | Guía3D",
+        f"Qué impresora 3D comprar con un presupuesto de {limite_eur}€ o menos, con precios reales y actualizados de nuestro catálogo.",
+        [("Guía3D", "index.html"), ("Impresoras", "categoria-impresoras.html"), (f"Menos de {limite_eur}€", None)],
+        f"Mejores impresoras 3D por menos de {limite_eur} euros",
+        f"Qué impresora 3D comprar con {limite_eur}€ o menos, con precios y especificaciones reales de nuestro catálogo.",
+        prose,
+    )
+
+
+# ---- 4. mejor impresora calidad-precio -------------------------------------
+
+def build_art_calidad_precio():
+    impresoras = sorted([p for p in PRODUCTOS if p["nicho"] == "impresora" and is_activo(p)],
+                         key=lambda p: p.get("score_calidad_precio") or 0, reverse=True)
+    ganadora = impresoras[0]
+    prose = f"""
+      {quick_answer(f'Según nuestras puntuaciones editoriales, la impresora con mejor relación calidad-precio del catálogo es la <a href="{slug_ficha(ganadora)}">{esc(ganadora["name"])}</a> ({ganadora["score_calidad_precio"]}/10 en calidad-precio, {precio_frase(ganadora)}).')}
+
+      <h2>Ranking por calidad-precio</h2>
+      <div class="catalog-grid">{"".join(product_card_html(p) for p in impresoras)}</div>
+      <p class="radar-note">La puntuación de calidad-precio es un cálculo editorial nuestro (specs reales frente a precio), no una puntuación oficial de Amazon. Metodología en <a href="como-elegimos.html">cómo elegimos</a>.</p>
+
+      <h2>Comparativa de especificaciones</h2>
+      {spec_diff_table(impresoras, SPEC_FIELDS["impresora"])}
+
+      <p style="margin-top:1.4rem;">{comparar_cta_html("impresora", [p["id"] for p in impresoras], "Comparar las tres en el comparador →")}</p>
+      <p class="aviso-afiliados">Los botones "Ver en Amazon" son enlaces de afiliado: si compras a través de ellos, podemos recibir una comisión sin coste extra para ti.</p>
+    """
+    return article_page(
+        "mejor-impresora-3d-calidad-precio.html",
+        "Mejor impresora 3D calidad-precio en 2026 | Guía3D",
+        "Ranking de impresoras 3D por relación calidad-precio, con puntuación editorial calculada a partir de especificaciones reales.",
+        [("Guía3D", "index.html"), ("Impresoras", "categoria-impresoras.html"), ("Mejor calidad-precio", None)],
+        "Mejor impresora 3D calidad-precio",
+        "Comparamos las impresoras de nuestro catálogo por relación entre especificaciones y precio.",
+        prose,
+        extra_schema=itemlist_jsonld(impresoras, name="Mejor impresora 3D calidad-precio"),
+    )
+
+
+# ---- 5. qué impresora 3D comprar (decisión rápida) -------------------------
+
+def build_art_que_comprar():
+    ender = producto("creality-ender-3-v3-se")
+    adv = producto("flashforge-adventurer-5m")
+    ad5x = producto("flashforge-ad5x")
+    prose = f"""
+      {quick_answer('Depende de tu presupuesto y de si quieres montarla y calibrarla o que venga lista de caja. Sigue el árbol de decisión de abajo, o compara los tres modelos directamente.')}
+
+      <h2>Árbol de decisión rápido</h2>
+      <ul>
+        <li><strong>Presupuesto ajustado, no te importa calibrar un poco:</strong> <a href="{slug_ficha(ender)}">{esc(ender["name"])}</a> ({precio_frase(ender)}).</li>
+        <li><strong>Quieres que funcione bien desde el primer intento, sin trastear:</strong> <a href="{slug_ficha(adv)}">{esc(adv["name"])}</a> ({precio_frase(adv)}), cerrada y con nivelación de un clic.</li>
+        <li><strong>Quieres imprimir en varios colores sin comprar un AMS aparte:</strong> <a href="{slug_ficha(ad5x)}">{esc(ad5x["name"])}</a> ({precio_frase(ad5x)}), la única con módulo multicolor automático del catálogo.</li>
+      </ul>
+
+      <h2>Las tres, lado a lado</h2>
+      {spec_diff_table([ender, adv, ad5x], SPEC_FIELDS["impresora"])}
+
+      <p style="margin-top:1.4rem;">{comparar_cta_html("impresora", [ender["id"], adv["id"], ad5x["id"]], "Ver las tres en el comparador →")}</p>
+
+      <h2>Si prefieres una guía más completa</h2>
+      <p>Esta página es un atajo rápido. Para entender a fondo qué mirar en una impresora 3D (tamaño de cama, extrusor, materiales, etc.) antes de decidir, consulta <a href="como-elegir-tu-primera-impresora-3d.html">cómo elegir tu primera impresora 3D</a>.</p>
+      <p class="aviso-afiliados">Los botones "Ver en Amazon" son enlaces de afiliado: si compras a través de ellos, podemos recibir una comisión sin coste extra para ti.</p>
+    """
+    return article_page(
+        "que-impresora-3d-comprar.html",
+        "Qué impresora 3D comprar en 2026: guía rápida | Guía3D",
+        "Árbol de decisión rápido para elegir impresora 3D según presupuesto y tipo de uso, con las tres impresoras de nuestro catálogo comparadas.",
+        [("Guía3D", "index.html"), ("Impresoras", "categoria-impresoras.html"), ("Qué impresora comprar", None)],
+        "Qué impresora 3D comprar",
+        "Un árbol de decisión rápido: presupuesto, facilidad de uso o multicolor, y a qué modelo te lleva cada uno.",
+        prose,
+    )
+
+
+# ---- 6/7. merece la pena X -------------------------------------------------
+
+def build_art_merece_la_pena(pid, slug):
+    p = producto(pid)
+    alternativas = [q for q in PRODUCTOS if q["nicho"] == p["nicho"] and q["id"] != pid and is_activo(q)]
+    pros = "".join(f"<li>{esc(x)}</li>" for x in (p.get("pros") or []))
+    contras = "".join(f"<li>{esc(x)}</li>" for x in (p.get("contras") or []))
+    prose = f"""
+      {quick_answer(f'Sobre el papel, sí, dentro de su rango de precio ({precio_frase(p)}): {esc(p.get("destacado_editorial") or "")} Su punto débil según las reseñas: {esc((p.get("contras") or [""])[0])}')}
+
+      <h2>Lo que dice la ficha técnica</h2>
+      <p>{p.get("cuerpo_editorial") or ""}</p>
+
+      <h2>Ventajas, según especificaciones y reseñas</h2>
+      <ul class="pros">{pros}</ul>
+      <h2>Desventajas, según especificaciones y reseñas</h2>
+      <ul class="contras">{contras}</ul>
+
+      <h2>¿Para quién merece la pena?</h2>
+      <p>{esc(p.get("ideal_para") or "")}</p>
+
+      <h2>Lo que dicen los compradores</h2>
+      <p>{esc(p.get("resenas_resumen") or "")}</p>
+      <p class="radar-note">Resumen de reseñas públicas en Amazon.es en el momento de la captura ({esc(p.get("precio_fecha") or "")}). No hemos probado físicamente esta unidad — este resumen se basa en documentación del fabricante y reseñas verificadas de compradores.</p>
+
+      <p style="margin-top:1.4rem;">{buy_button_html(p, extra_class="btn-repeat")}</p>
+      <p class="aviso-afiliados">Como Afiliados de Amazon, obtenemos ingresos por las compras que cumplen los requisitos aplicables.</p>
+
+      {related_section(alternativas) if alternativas else ""}
+    """
+    return article_page(
+        slug,
+        f"¿Merece la pena la {p['name']}? | Guía3D",
+        f"Analizamos si la {p['name']} merece la pena según su ficha técnica, precio y reseñas reales de Amazon.es — sin haberla probado físicamente.",
+        [("Guía3D", "index.html"), (NICHO_LABEL[p["nicho"]], NICHO_SLUG_PAGE[p["nicho"]]), (f"¿Merece la pena la {p['name']}?", None)],
+        f"¿Merece la pena la {p['name']}?",
+        "Análisis basado en ficha técnica del fabricante y reseñas verificadas de compradores en Amazon.es. No la hemos probado físicamente.",
+        prose,
+    )
+
+
+# ---- 8. mejor filamento PLA calidad-precio ---------------------------------
+
+def build_art_pla():
+    pla = [p for p in PRODUCTOS if p["nicho"] == "filamento" and is_activo(p) and p.get("material") == "PLA"]
+    unico = len(pla) == 1
+    destacado = pla[0] if pla else None
+    honesto = ""
+    if unico:
+        honesto = (f'<p><strong>Aviso de transparencia:</strong> ahora mismo solo tenemos un filamento PLA en catálogo: '
+                   f'el <a href="{slug_ficha(destacado)}">{esc(destacado["name"])}</a>. Te lo presentamos con sus pros y contras reales '
+                   f'(incluida una advertencia real de una reseña sobre consistencia de diámetro), y añadimos criterios generales '
+                   f'para que sepas qué mirar si comparas con otras marcas.</p>')
+    prose = f"""
+      {quick_answer(f'{"Nuestra única recomendación en catálogo ahora mismo es el " + esc(destacado["name"]) + " (" + precio_frase(destacado) + "/kg), fabricado en España." if destacado else "Todavía no tenemos filamento PLA en catálogo."}')}
+
+      {honesto}
+
+      {f'<div class="catalog-grid">{product_card_html(destacado)}</div>' if destacado else ""}
+
+      <h2>Qué mirar en un PLA calidad-precio, en general</h2>
+      <ul>
+        <li><strong>Tolerancia de diámetro:</strong> cuanto más ajustada (±0,02-0,03 mm es buena), menos atascos y más consistencia entre bobinas.</li>
+        <li><strong>Temperatura de impresión indicada:</strong> un rango amplio (190-230°C) suele señalar un PLA más tolerante a distintas impresoras.</li>
+        <li><strong>Origen y trazabilidad:</strong> filamento fabricado en la UE con certificaciones ISO suele tener control de calidad más consistente lote a lote.</li>
+        <li><strong>Reseñas verificadas de compradores</strong> antes que promesas de marketing en el envase.</li>
+      </ul>
+
+      {(f'<h2>Ficha técnica</h2>{spec_diff_table([destacado], SPEC_FIELDS["filamento"])}') if destacado else ''}
+
+      {(f'<p style="margin-top:1.4rem;">{buy_button_html(destacado, extra_class="btn-repeat")}</p><p class="aviso-afiliados">Como Afiliados de Amazon, obtenemos ingresos por las compras que cumplen los requisitos aplicables.</p>') if destacado else ''}
+    """
+    return article_page(
+        "mejor-filamento-pla-calidad-precio.html",
+        "Mejor filamento PLA calidad-precio | Guía3D",
+        "Qué filamento PLA comprar por relación calidad-precio: nuestra recomendación en catálogo y qué mirar en general al elegir uno.",
+        [("Guía3D", "index.html"), ("Filamento", "categoria-filamento.html"), ("Mejor PLA calidad-precio", None)],
+        "Mejor filamento PLA calidad-precio",
+        "Nuestra recomendación en catálogo y los criterios generales para elegir un buen PLA sin sorpresas.",
+        prose,
+    )
+
+
+# ---- 9. accesorios imprescindibles -----------------------------------------
+
+def build_art_accesorios():
+    accesorios = [p for p in PRODUCTOS if p["nicho"] == "accesorio" and is_activo(p)]
+    ids_catalogo = {p.get("tipo_accesorio", "").lower() for p in accesorios}
+    prose = f"""
+      {quick_answer('Boquillas de repuesto y un calibre digital son los dos accesorios que más se repiten entre quienes ya llevan un tiempo imprimiendo — y son los dos que tenemos en catálogo con enlace de compra. Debajo añadimos otras categorías recomendadas en general, aunque todavía no tengamos un producto propio para cada una.')}
+
+      <h2>En nuestro catálogo, con enlace de compra</h2>
+      <div class="catalog-grid">{"".join(product_card_html(p) for p in accesorios)}</div>
+
+      <h2>Otras categorías recomendadas en general</h2>
+      <p>Estas categorías las recomienda de forma habitual la comunidad de impresión 3D, aunque todavía no tenemos un producto concreto en catálogo para cada una — las iremos añadiendo con enlace de afiliado real cuando las tengamos:</p>
+      <ul>
+        <li><strong>Espátula para despegar piezas</strong> de la cama sin dañarla.</li>
+        <li><strong>Caja seca o gel de sílice</strong> para guardar el filamento, sobre todo PLA e higroscópicos como el nylon.</li>
+        <li><strong>Alicates de corte fino</strong> para retirar soportes y rebabas.</li>
+        <li><strong>Base de nivelación / hoja de acero PEI de repuesto</strong>, útil cuando la original se desgasta.</li>
+      </ul>
+
+      <p style="margin-top:1.4rem;"><a href="categoria-accesorios.html" style="color:var(--accent);font-weight:700;">→ Ver todos los accesorios en catálogo</a></p>
+      <p class="aviso-afiliados">Los botones "Ver en Amazon" son enlaces de afiliado: si compras a través de ellos, podemos recibir una comisión sin coste extra para ti.</p>
+    """
+    return article_page(
+        "accesorios-imprescindibles-para-impresora-3d.html",
+        "Accesorios imprescindibles para tu impresora 3D | Guía3D",
+        "Qué accesorios comprar para tu impresora 3D: los que tenemos en catálogo con enlace de compra, y otras categorías recomendadas en general.",
+        [("Guía3D", "index.html"), ("Accesorios", "categoria-accesorios.html"), ("Imprescindibles", None)],
+        "Accesorios imprescindibles para tu impresora 3D",
+        "Los accesorios que de verdad se usan, con los que tenemos en catálogo y las categorías que iremos añadiendo.",
+        prose,
+        extra_schema=itemlist_jsonld(accesorios, name="Accesorios imprescindibles") if accesorios else "",
+    )
+
+
+# ---- hub: cómo elegir tu primera impresora 3D ------------------------------
+
+def build_hub_como_elegir():
+    prose = f"""
+      <p>Esta es la guía completa: si es la primera vez que compras una impresora 3D, empieza aquí. Si ya sabes lo que buscas, ve directo a nuestras <a href="#comparativas">comparativas</a> o al <a href="comparador.html">comparador</a>.</p>
+
+      <h2>1. FDM o resina</h2>
+      <p>Para la gran mayoría de gente que empieza, FDM (filamento fundido) es la opción correcta: el material cuesta menos por pieza, no requiere manipular resina líquida ni alcohol isopropílico para el postprocesado, y las piezas son más resistentes mecánicamente. La resina da más detalle (útil para miniaturas), pero tiene más mantenimiento. Todo nuestro catálogo actual es FDM.</p>
+
+      <h2>2. Tamaño de cama</h2>
+      <p>220×220 mm cubre la inmensa mayoría de piezas domésticas y de repuesto. Solo necesitas más si ya sabes que vas a imprimir piezas grandes (cascos, soportes grandes, etc.).</p>
+
+      <h2>3. Auto-nivelado</h2>
+      <p>No es obligatorio, pero evita la causa más habitual de que fallen las primeras impresiones: una cama mal nivelada. Todas las impresoras de nuestro catálogo lo incluyen.</p>
+
+      <h2>4. Extrusor directo vs bowden</h2>
+      <p>El extrusor directo empuja el filamento justo encima de la boquilla, con más precisión — mejor para filamentos flexibles como el TPU. El bowden lo empuja desde más lejos con un tubo; el cabezal pesa menos pero el control es algo menos preciso. Las tres impresoras de nuestro catálogo usan extrusor directo.</p>
+
+      <h2>5. Cámara abierta o cerrada</h2>
+      <p>Para PLA no importa. Para PETG o materiales con fibra de carbono, una cámara cerrada da resultados más estables al evitar corrientes de aire.</p>
+
+      <h2>6. Presupuesto: qué esperar en cada franja</h2>
+      <ul>
+        <li><strong>Hasta 200€:</strong> FDM abierta, cama ~220×220 mm, auto-nivelado en los modelos recientes.</li>
+        <li><strong>200-350€:</strong> empiezan a aparecer estructuras cerradas (CoreXY) y velocidades más altas.</li>
+        <li><strong>350€+:</strong> impresión multicolor, cámaras más grandes, más automatización.</li>
+      </ul>
+
+      <h2 id="comparativas">Sigue explorando</h2>
+      <div class="more-grid">
+        <a class="more-card" href="mejor-impresora-3d-para-principiantes.html"><h3>Mejor impresora 3D para principiantes</h3><p>Nuestra recomendación si nunca has impreso antes.</p></a>
+        <a class="more-card" href="que-impresora-3d-comprar.html"><h3>Qué impresora 3D comprar</h3><p>Árbol de decisión rápido por presupuesto y uso.</p></a>
+        <a class="more-card" href="mejor-impresora-3d-calidad-precio.html"><h3>Mejor impresora 3D calidad-precio</h3><p>Ranking por relación entre specs y precio.</p></a>
+        <a class="more-card" href="mejores-impresoras-3d-por-menos-de-200-euros.html"><h3>Menos de 200€</h3><p>Qué comprar con presupuesto ajustado.</p></a>
+        <a class="more-card" href="mejores-impresoras-3d-por-menos-de-300-euros.html"><h3>Menos de 300€</h3><p>Qué comprar con algo más de margen.</p></a>
+        <a class="more-card" href="categoria-impresoras.html"><h3>Ver todas las impresoras</h3><p>Catálogo completo con fichas y specs.</p></a>
+        <a class="more-card" href="comparador.html"><h3>Comparador</h3><p>Enfrenta varios modelos lado a lado.</p></a>
+        <a class="more-card" href="categoria-filamento.html"><h3>Filamento</h3><p>PLA y qué mirar al elegirlo.</p></a>
+        <a class="more-card" href="categoria-accesorios.html"><h3>Accesorios</h3><p>Lo que de verdad hace falta para imprimir sin sobresaltos.</p></a>
+      </div>
+    """
+    return article_page(
+        "como-elegir-tu-primera-impresora-3d.html",
+        "Cómo elegir tu primera impresora 3D | Guía3D",
+        "FDM o resina, tamaño de cama, auto-nivelado y presupuesto: qué mirar antes de comprar tu primera impresora 3D, con enlaces a todas nuestras comparativas.",
+        [("Guía3D", "index.html"), ("Guías", "guia-mejor-impresora-2026.html"), ("Cómo elegir tu primera impresora 3D", None)],
+        "Cómo elegir tu primera impresora 3D",
+        "Los criterios que de verdad importan, explicados sin tecnicismos, con enlaces a todas nuestras comparativas y fichas.",
+        prose,
+    )
 
 
 # ---------------------------------------------------------------- static legal / trust pages
@@ -822,6 +1345,25 @@ def build_aviso_legal():
     )
 
 
+# ---------------------------------------------------------------- sitemap.xml
+
+def build_sitemap(static_paths, product_paths, article_paths):
+    today = datetime.date.today().isoformat()
+
+    def url(path, priority, changefreq="monthly"):
+        return (f"  <url><loc>{SITE_URL}/{path}</loc><lastmod>{today}</lastmod>"
+                f"<changefreq>{changefreq}</changefreq><priority>{priority}</priority></url>")
+
+    entries = [url("index.html", "1.0", "weekly")]
+    entries += [url(p, "0.8", "weekly") for p in static_paths]
+    entries += [url(p, "0.9", "weekly") for p in article_paths]
+    entries += [url(p, "0.7", "monthly") for p in product_paths]
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+           + "\n".join(entries) + "\n</urlset>\n")
+    return xml
+
+
 # ---------------------------------------------------------------- main
 
 def main():
@@ -838,7 +1380,25 @@ def main():
     write("privacidad.html", build_privacidad())
     write("aviso-legal.html", build_aviso_legal())
     write("lib/db.js", build_db_js())
-    print(f"Listo: {len(PRODUCTOS)} productos, {len(NICHOS)} categorías, {3 + len(NICHOS) + len(PRODUCTOS) + 3} páginas HTML.")
+
+    ARTICULOS.clear()
+    write("mejor-impresora-3d-para-principiantes.html", build_art_principiantes())
+    write("mejores-impresoras-3d-por-menos-de-200-euros.html", build_art_presupuesto(200, "mejores-impresoras-3d-por-menos-de-200-euros.html"))
+    write("mejores-impresoras-3d-por-menos-de-300-euros.html", build_art_presupuesto(300, "mejores-impresoras-3d-por-menos-de-300-euros.html"))
+    write("mejor-impresora-3d-calidad-precio.html", build_art_calidad_precio())
+    write("que-impresora-3d-comprar.html", build_art_que_comprar())
+    write("merece-la-pena-ender-3-v3-se.html", build_art_merece_la_pena("creality-ender-3-v3-se", "merece-la-pena-ender-3-v3-se.html"))
+    write("mejor-filamento-pla-calidad-precio.html", build_art_pla())
+    write("accesorios-imprescindibles-para-impresora-3d.html", build_art_accesorios())
+    write("como-elegir-tu-primera-impresora-3d.html", build_hub_como_elegir())
+
+    static_paths = [NICHO_SLUG_PAGE[n] for n in NICHOS] + ["comparador.html", "guia-mejor-impresora-2026.html", "ofertas.html", "como-elegimos.html"]
+    product_paths = [slug_ficha(p) for p in PRODUCTOS if is_activo(p) and not p.get("isDemo")]
+    article_paths = [slug for slug, _ in ARTICULOS]
+    write("sitemap.xml", build_sitemap(static_paths, product_paths, article_paths))
+
+    print(f"Listo: {len(PRODUCTOS)} productos, {len(NICHOS)} categorías, {len(ARTICULOS)} artículos, "
+          f"{3 + len(NICHOS) + len(PRODUCTOS) + 3 + len(ARTICULOS) + 1} páginas HTML + sitemap.")
 
 
 if __name__ == "__main__":

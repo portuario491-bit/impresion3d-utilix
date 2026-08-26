@@ -165,10 +165,27 @@
 
   // ---------------------------------------------------------------- comparador page
 
+  function applyUrlPreselection() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var ids = params.get("ids");
+      if (!ids) return null;
+      var idList = ids.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+      if (!idList.length) return null;
+      var selection = getSelection();
+      idList.forEach(function (id) {
+        if (selection.indexOf(id) === -1) selection.push(id);
+      });
+      setSelection(selection);
+      return params.get("nicho");
+    } catch (e) { return null; }
+  }
+
   function initComparadorPage() {
     var root = $("[data-comparador-root]");
     if (!root) return;
 
+    var preselectNicho = applyUrlPreselection();
     var tabs = $$("[data-nicho-tab]");
     var panels = $$("[data-nicho-panel]");
     var activeNicho = (tabs[0] && tabs[0].getAttribute("data-nicho-tab")) || "impresora";
@@ -267,7 +284,7 @@
     }
 
     restoreChecks();
-    setActiveTab(activeNicho);
+    setActiveTab(preselectNicho || activeNicho);
   }
 
   // ---------------------------------------------------------------- boot
