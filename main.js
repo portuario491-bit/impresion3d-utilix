@@ -261,7 +261,7 @@
       var head = '<tr><th>Especificación</th>' + productos.map(function (p) {
         var ficha = "producto-" + p.id + ".html";
         return '<th class="compare-col-head">' +
-          '<a href="' + escHTML(ficha) + '">' +
+          '<a class="compare-name-link" href="' + escHTML(ficha) + '">' +
           (p.images && p.images[0] ? '<img src="' + escHTML(p.images[0]) + '" alt="">' : '') +
           '<div>' + escHTML(p.name) + '</div>' +
           '</a>' +
