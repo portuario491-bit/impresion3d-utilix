@@ -201,6 +201,26 @@ def radar_canvas_html(elem_id, extra_class=""):
     return f'<canvas id="{elem_id}" class="{extra_class}" width="320" height="280" role="img" aria-label="Gráfico de valoraciones del editor"></canvas>'
 
 
+def breadcrumb_schema(trail):
+    """trail: lista de (nombre, path) — path relativo tipo 'index.html', SIEMPRE con item."""
+    items = []
+    for i, (name, path) in enumerate(trail, start=1):
+        items.append(
+            f'{{ "@type": "ListItem", "position": {i}, "name": {json.dumps(name, ensure_ascii=False)}, "item": "{SITE_URL}/{path}" }}'
+        )
+    sep = ",\n    "
+    items_str = sep.join(items)
+    return f"""<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {items_str}
+  ]
+}}
+</script>"""
+
+
 # ---------------------------------------------------------------- shell
 
 def page_shell(title, description, path, body, robots="index, follow", extra_head="", canonical=None):
@@ -434,6 +454,7 @@ def build_ficha(p):
             "aggregateRating": {"@type": "AggregateRating", "ratingValue": str(p.get("valoracion_media")), "reviewCount": str(p.get("resenas_cantidad") or 1)}
         }, ensure_ascii=False, indent=2)}
 </script>"""
+    jsonld += breadcrumb_schema([("Guía3D", "index.html"), (NICHO_LABEL[nicho], NICHO_SLUG_PAGE[nicho]), (p["name"], slug_ficha(p))])
 
     body = f"""<main id="contenido" class="container-wide">
   <p class="breadcrumb" style="margin-top:1rem;"><a href="index.html">Guía3D</a> / <a href="{NICHO_SLUG_PAGE[nicho]}">{NICHO_LABEL[nicho]}</a> / {esc(p["name"])}</p>
@@ -530,7 +551,8 @@ def build_category(nicho):
 </main>"""
     title = f"{NICHO_LABEL[nicho]}: comparativa y opiniones | Guía3D"
     desc = CATEGORY_INTRO_SHORT[nicho]
-    return page_shell(title, desc, NICHO_SLUG_PAGE[nicho], body)
+    crumbs = breadcrumb_schema([("Guía3D", "index.html"), (NICHO_LABEL[nicho], NICHO_SLUG_PAGE[nicho])])
+    return page_shell(title, desc, NICHO_SLUG_PAGE[nicho], body, extra_head=crumbs)
 
 
 # ---------------------------------------------------------------- home
@@ -652,6 +674,7 @@ def build_comparador():
         "Comparador de impresoras 3D, filamento y accesorios | Guía3D",
         "Compara varios productos lado a lado: ficha técnica completa y gráfico de valoración superpuesto.",
         "comparador.html", body,
+        extra_head=breadcrumb_schema([("Guía3D", "index.html"), ("Comparador", "comparador.html")]),
     )
 
 
@@ -717,7 +740,7 @@ def build_guide():
 
     body = f"""<main id="contenido">
   <section class="page-hero container-wide">
-    <p class="breadcrumb"><a href="index.html">Guía3D</a> / Guías / Mejor impresora 2026</p>
+    <p class="breadcrumb"><a href="index.html">Guía3D</a> / Mejor impresora 2026</p>
     <h1>Mejor impresora 3D para empezar en 2026</h1>
     <p class="hero-sub">Nuestra recomendación según presupuesto y tipo de uso, con los mismos criterios que usamos en todo el catálogo.</p>
   </section>
@@ -760,6 +783,7 @@ def build_guide():
         "Mejor impresora 3D para empezar 2026 | Guía3D",
         "Guía de compra: qué impresora 3D elegir según tu presupuesto y tipo de uso, con nuestra selección comparada.",
         "guia-mejor-impresora-2026.html", body,
+        extra_head=breadcrumb_schema([("Guía3D", "index.html"), ("Mejor impresora 2026", "guia-mejor-impresora-2026.html")]),
     )
 
 
@@ -786,6 +810,7 @@ def build_ofertas():
         "Ofertas en impresoras 3D, filamento y accesorios | Guía3D",
         "Productos de impresión 3D con descuento respecto a su precio habitual en Amazon.es.",
         "ofertas.html", body,
+        extra_head=breadcrumb_schema([("Guía3D", "index.html"), ("Ofertas", "ofertas.html")]),
     )
 
 
@@ -835,7 +860,8 @@ def build_como_elegimos():
     return page_shell(
         "Cómo elegimos y puntuamos los productos | Guía3D",
         "La metodología detrás de las puntuaciones y fichas de producto de Guía3D, explicada de forma transparente.",
-        "como-elegimos.html", body, extra_head="",
+        "como-elegimos.html", body,
+        extra_head=breadcrumb_schema([("Guía3D", "index.html"), ("Cómo elegimos", "como-elegimos.html")]),
     )
 
 
