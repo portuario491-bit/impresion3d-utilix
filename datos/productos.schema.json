@@ -50,6 +50,11 @@
         "nivel_ruido_db":       { "type": "number", "unit": "dB", "mejor": "min" },
         "peso_kg":              { "type": "number", "unit": "kg" },
         "garantia_meses":       { "type": "int", "unit": "meses", "mejor": "max" },
+        "estructura":           { "type": "enum", "values": ["abierta", "cerrada"] },
+        "multicolor":           { "type": "bool" },
+        "materiales_compatibles": { "type": "string", "desc": "Lista en texto de materiales compatibles según el fabricante; 'No confirmados...' si no hay dato" },
+        "nivel_recomendado":    { "type": "enum", "values": ["principiante", "intermedio", "avanzado"], "desc": "Juicio editorial, no dato de Amazon" },
+        "mantenimiento":        { "type": "string", "desc": "Resumen editorial breve (Bajo/Medio/Alto + motivo), no dato de Amazon" },
         "specs_extra":          { "type": "object" }
       },
       "D_scores": {

@@ -165,6 +165,17 @@ table { border-collapse: collapse; width: 100%; }
   margin-block: 1.2rem; font-size: .92rem;
 }
 .prose .tip-box strong { color: var(--accent-hover); }
+.guia-toc {
+  display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 0 0 1.6rem 0; padding: 0;
+}
+.guia-toc li { margin: 0; }
+.guia-toc a {
+  display: inline-block; padding: .45rem .9rem; border-radius: 999px; border: 1px solid var(--border);
+  color: var(--text); font-size: .84rem; font-weight: 600; text-decoration: none;
+}
+.guia-toc a:hover { border-color: var(--accent); color: var(--accent); }
+.prose .segmento-intro { margin-bottom: 1rem; }
+.prose h2[id] { scroll-margin-top: 90px; }
 
 /* Spec / comparison table for buying guides */
 .spec-table-wrap { overflow-x: auto; border-radius: var(--radius-m); border: 1px solid var(--border); margin-block: 1.2rem; }
@@ -394,6 +405,10 @@ table { border-collapse: collapse; width: 100%; }
 }
 .btn-comparar-add:hover { border-color: var(--accent); }
 .btn-comparar-add.is-active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.ficha-ir-comparador { font-weight: 700; font-size: .86rem; color: var(--accent); text-decoration: none; }
+.ficha-ir-comparador:hover { text-decoration: underline; }
+.ficha-relacionados { margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+.ficha-relacionados h2 { font-size: 1.2rem; margin-bottom: 1rem; }
 
 .similares { margin-top: 2rem; }
 .similares h3 { font-size: 1.05rem; margin-bottom: .8rem; }
@@ -426,6 +441,9 @@ table { border-collapse: collapse; width: 100%; }
   border-radius: var(--radius-s); font-size: .88rem; cursor: pointer;
 }
 .comparador-check-item input { accent-color: var(--accent); width: 16px; height: 16px; }
+.comparador-max-hint { font-weight: 400; font-size: .82rem; color: var(--text-muted); }
+.comparador-limit-msg { margin-top: .9rem; padding: .7rem .9rem; border-radius: var(--radius-s); background: var(--danger-soft); color: var(--danger); font-size: .86rem; font-weight: 600; }
+.comparador-limit-msg[hidden] { display: none; }
 
 .comparador-empty { margin-top: 1.4rem; }
 
@@ -438,10 +456,19 @@ table { border-collapse: collapse; width: 100%; }
 .compare-table td:first-child, .compare-table th:first-child { text-align: left; position: sticky; left: 0; background: var(--surface-soft); font-weight: 600; }
 .compare-table thead th { background: var(--surface-soft); font-size: .74rem; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); }
 .compare-table .compare-col-head { padding: .9rem .85rem; }
+.compare-table .compare-col-head a { color: inherit; text-decoration: none; display: block; }
+.compare-table .compare-col-head a div { color: var(--text); font-weight: 700; }
+.compare-table .compare-col-head a:hover div { color: var(--accent); text-decoration: underline; }
 .compare-table .compare-col-head img { width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-s); margin: 0 auto .4rem; }
+.compare-table .compare-col-head .compare-ver-ficha { display: block; margin-top: .4rem; font-size: .74rem; color: var(--accent); font-weight: 600; text-decoration: none; }
+.compare-table .compare-col-head .compare-ver-ficha:hover { text-decoration: underline; }
 .compare-table .compare-col-head .btn-comprar { margin-top: .5rem; padding: .5rem .9rem; font-size: .78rem; }
 .compare-table td.is-best { background: var(--ok-soft); font-weight: 700; }
 .compare-table tbody tr:last-child td { border-bottom: 0; }
+.compare-table .compare-list-cell, .compare-table .compare-text-cell { text-align: left; vertical-align: top; }
+.compare-table .compare-list-cell ul { margin: 0; padding-left: 1.1rem; font-size: .82rem; }
+.compare-table .compare-list-cell li { margin-bottom: .3rem; }
+.compare-table .compare-text-cell { font-size: .84rem; font-style: italic; color: var(--text-muted); }
 .compare-remove { font-size: .74rem; color: var(--danger); margin-top: .3rem; }
 
 /* =============================================================

@@ -184,11 +184,29 @@
       t.addEventListener("click", function () { setActiveTab(t.getAttribute("data-nicho-tab")); });
     });
 
+    var MAX_COMPARE = RADAR_COLORS.length;
+    var limitMsg = $("[data-compare-limit-msg]");
+
     $$("[data-compare-check]").forEach(function (chk) {
       chk.addEventListener("change", function () {
         var selection = getSelection();
         var id = chk.value;
         var i = selection.indexOf(id);
+        var panel = chk.closest("[data-nicho-panel]");
+        var nicho = panel ? panel.getAttribute("data-nicho-panel") : activeNicho;
+        var countInNicho = selection.filter(function (pid) {
+          var p = findProduct(pid);
+          return p && p.nicho === nicho;
+        }).length;
+        if (chk.checked && i === -1 && countInNicho >= MAX_COMPARE) {
+          chk.checked = false;
+          if (limitMsg) {
+            limitMsg.textContent = "Puedes comparar un máximo de " + MAX_COMPARE + " productos a la vez. Quita alguno para añadir este.";
+            limitMsg.hidden = false;
+          }
+          return;
+        }
+        if (limitMsg) limitMsg.hidden = true;
         if (chk.checked && i === -1) selection.push(id);
         if (!chk.checked && i > -1) selection.splice(i, 1);
         setSelection(selection);
@@ -212,9 +230,16 @@
       return nums.map(function (v) { return v !== null && v === target; });
     }
 
+    function fmtEUR(v) {
+      if (v == null) return "—";
+      var parts = v.toFixed(2).split(".");
+      var intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      return (parts[1] === "00" ? intPart : intPart + "," + parts[1]) + " €";
+    }
+
     function render() {
       var selection = getSelection();
-      var productos = selection.map(findProduct).filter(function (p) { return p && p.nicho === activeNicho; });
+      var productos = selection.map(findProduct).filter(function (p) { return p && p.nicho === activeNicho; }).slice(0, MAX_COMPARE);
       if (productos.length < 2) {
         root.innerHTML = '<div class="comparador-empty empty-state"><div class="empty-icon">⚖️</div><p>Selecciona al menos 2 productos de "' + escHTML(activeNicho) + '" para ver la comparativa.</p></div>';
         return;
@@ -234,9 +259,13 @@
       }).join("");
 
       var head = '<tr><th>Especificación</th>' + productos.map(function (p) {
+        var ficha = "producto-" + p.id + ".html";
         return '<th class="compare-col-head">' +
+          '<a href="' + escHTML(ficha) + '">' +
           (p.images && p.images[0] ? '<img src="' + escHTML(p.images[0]) + '" alt="">' : '') +
           '<div>' + escHTML(p.name) + '</div>' +
+          '</a>' +
+          '<a class="compare-ver-ficha" href="' + escHTML(ficha) + '">Ver análisis completo →</a>' +
           '<a class="btn-comprar" style="padding:.5rem .9rem;font-size:.78rem;" href="' + escHTML(p.affiliate_url) + '" target="_blank" rel="sponsored nofollow noopener">' + (p.isDemo ? "Ver opciones" : "Ver en Amazon") + '</a>' +
           '</th>';
       }).join("") + "</tr>";
@@ -246,11 +275,27 @@
         var values = productos.map(function (p) { return p[f.field]; });
         var best = bestClass(f.field, values, f.better);
         var cells = values.map(function (v, i) {
-          var display = v === null || v === undefined || v === "" ? "—" : (typeof v === "boolean" ? (v ? "Sí" : "No") : (f.unit ? v + " " + f.unit : v));
+          var display;
+          if (v === null || v === undefined || v === "") display = "—";
+          else if (f.field === "discountedPrice") display = fmtEUR(v);
+          else if (typeof v === "boolean") display = v ? "Sí" : "No";
+          else display = f.unit ? v + " " + f.unit : v;
           return '<td class="' + (best[i] ? "is-best" : "") + '">' + escHTML(display) + '</td>';
         }).join("");
         return '<tr><th scope="row">' + escHTML(f.label) + '</th>' + cells + '</tr>';
       }).join("");
+
+      var extraRows =
+        '<tr><th scope="row">Ventajas</th>' + productos.map(function (p) {
+          return '<td class="compare-list-cell"><ul>' + (p.pros || []).slice(0, 3).map(function (x) { return '<li>' + escHTML(x) + '</li>'; }).join("") + '</ul></td>';
+        }).join("") + '</tr>' +
+        '<tr><th scope="row">Inconvenientes</th>' + productos.map(function (p) {
+          return '<td class="compare-list-cell"><ul>' + (p.contras || []).slice(0, 3).map(function (x) { return '<li>' + escHTML(x) + '</li>'; }).join("") + '</ul></td>';
+        }).join("") + '</tr>' +
+        '<tr><th scope="row">Mejor para...</th>' + productos.map(function (p) {
+          return '<td class="compare-text-cell">' + escHTML(p.ideal_para || "—") + '</td>';
+        }).join("") + '</tr>';
+      rows = rows + extraRows;
 
       root.innerHTML =
         '<div class="comparador-result-inner">' +
