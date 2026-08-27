@@ -876,7 +876,7 @@ def build_privacidad():
       <p>Esta web puede mostrar anuncios de Google AdSense. Google y sus proveedores pueden utilizar cookies u otras tecnologías similares para mostrar publicidad relevante y medir su rendimiento. Puedes gestionar tus preferencias de anuncios desde <a href="https://adssettings.google.com/" style="color:var(--accent);">adssettings.google.com</a> y tus preferencias de cookies desde la configuración de tu navegador.</p>
       <p><strong>Enlaces de afiliado:</strong> algunos enlaces de esta web dirigen a Amazon.es a través del Programa de Afiliados de Amazon EU. Al hacer clic en uno de estos enlaces, Amazon puede colocar una cookie en tu navegador para reconocer que la visita procede de Guía3D si completas una compra. Esto no afecta al precio que pagas y no compartimos ningún dato personal tuyo con Amazon a través de este proceso.</p>
       <p><strong>Comparador:</strong> los productos que seleccionas en el comparador se guardan únicamente en tu propio navegador (almacenamiento local), nunca en un servidor nuestro.</p>
-      <p>Para cualquier consulta sobre esta política, puedes escribir a: hola@utilix.uno</p>
+      <p>Para cualquier consulta sobre esta política, puedes escribir a: portuario491@hotmail.com</p>
     </div>
   </div>
 </main>"""
@@ -913,7 +913,7 @@ def build_contacto():
     <h1 style="font-size:1.9rem; margin-bottom:1.2rem;">Contacto</h1>
     <div class="prose">
       <p>¿Tienes una duda sobre algún producto, has encontrado un error o un enlace roto en alguna ficha, quieres proponernos un producto para el catálogo, o te interesa una colaboración? Escríbenos y te responderemos personalmente:</p>
-      <p style="font-size:1.3rem; margin:1.5rem 0;"><a href="mailto:hola@utilix.uno" style="color:var(--accent); font-weight:700;">hola@utilix.uno</a></p>
+      <p style="font-size:1.3rem; margin:1.5rem 0;"><a href="mailto:portuario491@hotmail.com" style="color:var(--accent); font-weight:700;">portuario491@hotmail.com</a></p>
       <p>Para saber más sobre quiénes somos y cómo elegimos los productos, visita <a href="quienes-somos.html" style="color:var(--accent);">quiénes somos</a> y <a href="como-elegimos.html" style="color:var(--accent);">cómo elegimos</a>.</p>
     </div>
   </div>
@@ -931,7 +931,7 @@ def build_aviso_legal():
   <div class="container" style="padding-block:2.5rem;">
     <h1 style="font-size:1.9rem; margin-bottom:1.2rem;">Aviso legal</h1>
     <div class="prose">
-      <p><!-- TODO (propietario del sitio): sustituye estos datos por los de tu titularidad real (nombre/razón social, NIF/CIF, domicilio, correo de contacto). -->Titular del sitio: Guía3D · Utilix · Contacto: hola@utilix.uno</p>
+      <p><!-- TODO (propietario del sitio): sustituye estos datos por los de tu titularidad real (nombre/razón social, NIF/CIF, domicilio, correo de contacto). -->Titular del sitio: Guía3D · Utilix · Contacto: portuario491@hotmail.com</p>
       <p><strong>Guía3D forma parte del Programa de Afiliados de Amazon EU</strong>, un programa de publicidad para afiliados diseñado para ofrecer a los sitios web un modo de obtener comisiones por publicidad, publicitando e incluyendo enlaces a Amazon.es y sitios afiliados de Amazon en la Unión Europea. Como Afiliados de Amazon, obtenemos ingresos por las compras adscritas que cumplen los requisitos aplicables.</p>
       <p>Los precios, la disponibilidad y las características de los productos mostrados en Amazon a través de nuestros enlaces son los vigentes en Amazon.es en el momento de la compra y pueden cambiar sin previo aviso. Guía3D no vende, envía ni gestiona directamente ningún producto: toda compra se realiza en Amazon.es bajo sus propias condiciones.</p>
       <p>Las puntuaciones y valoraciones del editor mostradas en cada ficha son cálculos propios, explicados en <a href="como-elegimos.html" style="color:var(--accent);">cómo elegimos</a>, y no deben confundirse con las valoraciones o reseñas oficiales de Amazon, que se muestran por separado y de forma identificada.</p>
