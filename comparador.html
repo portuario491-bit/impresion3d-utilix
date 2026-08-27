@@ -68,12 +68,12 @@
   <section class="page-hero container-wide">
     <p class="breadcrumb"><a href="index.html">Guía3D</a> / Comparador</p>
     <h1>Comparador</h1>
-    <p class="hero-sub">Elige 2 o más productos del mismo tipo y compáralos lado a lado, con sus gráficos de valoración superpuestos.</p>
+    <p class="hero-sub">Elige entre 2 y 4 productos del mismo tipo y compáralos lado a lado, con sus gráficos de valoración superpuestos.</p>
   </section>
 
   <div class="container-wide">
     <div class="comparador-picker">
-      <h2>Elige productos a comparar</h2>
+      <h2>Elige productos a comparar <span class="comparador-max-hint">(máximo 4 a la vez)</span></h2>
       <div class="comparador-nicho-tabs">
         <button type="button" data-nicho-tab="impresora" class="is-active"><svg class="icon-tab" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="5" y="13" width="14" height="8" rx="1"/><path d="M6 9H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2M18 9h2a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2"/><circle cx="16.5" cy="11.5" r=".5" fill="currentColor"/></svg> Impresoras 3D</button>
       <button type="button" data-nicho-tab="filamento" class=""><svg class="icon-tab" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="6.5" ry="2.5"/><ellipse cx="12" cy="18.5" rx="6.5" ry="2.5"/><path d="M5.5 5.5v13M18.5 5.5v13"/><path d="M9 6c0 2.5 6 2.5 6 5.5S9 14.5 9 17"/></svg> Filamento</button>
@@ -88,16 +88,62 @@
         </label><label class="comparador-check-item">
           <input type="checkbox" data-compare-check value="flashforge-ad5x">
           FlashForge AD5X
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="elegoo-neptune-4">
+          ELEGOO Neptune 4
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="anycubic-kobra-3-max-combo">
+          Anycubic Kobra 3 MAX Combo
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="bambu-lab-a1-mini">
+          Bambu Lab A1 Mini
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="bambu-lab-a1-combo-led">
+          Bambu Lab A1 Combo + Kit LED
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="bambu-lab-p1s">
+          Bambu Lab P1S
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="creality-k1c">
+          Creality K1C
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="flashforge-adventurer-5m-pro">
+          FlashForge Adventurer 5M Pro
         </label></div><div class="comparador-checklist" data-nicho-panel="filamento" hidden><label class="comparador-check-item">
           <input type="checkbox" data-compare-check value="winkle-pla-blanco-glaciar">
           WINKLE Filamento PLA HD Blanco Glaciar 1.75mm 1kg
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="elegoo-petg-rapido-negro">
+          ELEGOO Filamento PETG Rápido 1.75mm 1kg Negro
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="elegoo-tpu-95a-negro">
+          ELEGOO Filamento TPU 95A 1.75mm 1KG Negro
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="elegoo-pla-negro">
+          ELEGOO Filamento PLA 1.75mm 1KG Negro
         </label></div><div class="comparador-checklist" data-nicho-panel="accesorio" hidden><label class="comparador-check-item">
           <input type="checkbox" data-compare-check value="luter-boquillas-mk8">
           LUTER Kit de Boquillas MK8 0.2mm + Agujas de Limpieza
         </label><label class="comparador-check-item">
           <input type="checkbox" data-compare-check value="hardell-calibre-digital">
           HARDELL Calibre Digital 150mm
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="ajoyib-placa-pei-235">
+          AJOYIB Placa de Construcción PEI Doble Cara 235×235mm
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="sunlu-filament-dryer-s1-plus">
+          SUNLU Filament Dryer S1 PLUS
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="creality-kit-herramientas-pro">
+          Creality Kit de Herramientas para Impresora 3D Pro
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="koyofei-boquillas-neptune4">
+          KOYOFEI Kit 20 Boquillas Latón para Neptune 4 (Multi-tamaño)
+        </label><label class="comparador-check-item">
+          <input type="checkbox" data-compare-check value="kraftprotz-pegamento-gel-3d">
+          KRAFTPROTZ Pegamento Gel Impresión 3D 50g
         </label></div>
+      <p class="comparador-limit-msg" data-compare-limit-msg hidden></p>
     </div>
 
     <div id="comparadorResult" class="comparador-result" data-comparador-root>

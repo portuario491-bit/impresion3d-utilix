@@ -74,7 +74,11 @@ SCORE_AXES = {
 # (field, label, unit, group, better)  better: "max" | "min" | None (no highlight)
 SPEC_FIELDS = {
     "impresora": [
+        ("discountedPrice", "Precio orientativo", "€", "General", "min"),
         ("tipo", "Tipo", "", "General", None),
+        ("estructura", "Estructura", "", "General", None),
+        ("multicolor", "Multicolor", "", "General", None),
+        ("nivel_recomendado", "Nivel recomendado", "", "General", None),
         ("cama_x_mm", "Cama X", "mm", "Dimensiones", "max"),
         ("cama_y_mm", "Cama Y", "mm", "Dimensiones", "max"),
         ("cama_z_mm", "Cama Z (altura)", "mm", "Dimensiones", "max"),
@@ -85,6 +89,8 @@ SPEC_FIELDS = {
         ("pantalla", "Pantalla", "", "General", None),
         ("diametro_filamento_mm", "Diámetro de filamento", "mm", "General", None),
         ("nivel_ruido_db", "Nivel de ruido", "dB", "General", "min"),
+        ("materiales_compatibles", "Materiales compatibles", "", "General", None),
+        ("mantenimiento", "Mantenimiento", "", "General", None),
         ("peso_kg", "Peso", "kg", "Dimensiones", None),
         ("garantia_meses", "Garantía", "meses", "General", "max"),
     ],
@@ -145,6 +151,8 @@ def fmt_val(v, unit=""):
         return "—"
     if isinstance(v, bool):
         return "Sí" if v else "No"
+    if unit == "€":
+        return fmt_eur(v)
     if unit:
         return f"{v} {unit}"
     return str(v)
@@ -372,6 +380,21 @@ def radar_data_attr(p):
     return esc(json.dumps({"labels": labels, "values": vals}))
 
 
+def related_products_html(p):
+    same_nicho = [x for x in PRODUCTOS if x["nicho"] == p["nicho"] and x["id"] != p["id"]]
+    same_cat = [x for x in same_nicho if x.get("categoria") == p.get("categoria")]
+    same_cat_ids = {x["id"] for x in same_cat}
+    others = [x for x in same_nicho if x["id"] not in same_cat_ids]
+    picks = (same_cat + others)[:3]
+    if not picks:
+        return ""
+    cards = "\n".join(product_card_html(x) for x in picks)
+    return f"""<section class="ficha-relacionados container">
+    <h2>También te puede interesar</h2>
+    <div class="catalog-grid">{cards}</div>
+  </section>"""
+
+
 def build_ficha(p):
     nicho = p["nicho"]
     is_demo = p.get("isDemo")
@@ -483,11 +506,13 @@ def build_ficha(p):
     <div class="container">
       <section class="ficha-comparar">
         <button class="btn-comparar-add" data-add-comparador="{esc(p['id'])}" data-nicho="{nicho}">+ Añadir al comparador</button>
+        <a class="ficha-ir-comparador" href="comparador.html">Ir al comparador →</a>
       </section>
       {buy_button_html(p, extra_class="btn-repeat")}
       <p class="aviso-afiliados">Como Afiliados de Amazon, obtenemos ingresos por las compras que cumplen los requisitos aplicables. «Amazon» y el logo de Amazon son marcas de Amazon.com, Inc. o sus filiales.</p>
     </div>
   </article>
+  {related_products_html(p)}
   {ad_slot_html()}
 </main>"""
 
@@ -626,16 +651,17 @@ def build_comparador():
   <section class="page-hero container-wide">
     <p class="breadcrumb"><a href="index.html">Guía3D</a> / Comparador</p>
     <h1>Comparador</h1>
-    <p class="hero-sub">Elige 2 o más productos del mismo tipo y compáralos lado a lado, con sus gráficos de valoración superpuestos.</p>
+    <p class="hero-sub">Elige entre 2 y 4 productos del mismo tipo y compáralos lado a lado, con sus gráficos de valoración superpuestos.</p>
   </section>
 
   <div class="container-wide">
     <div class="comparador-picker">
-      <h2>Elige productos a comparar</h2>
+      <h2>Elige productos a comparar <span class="comparador-max-hint">(máximo 4 a la vez)</span></h2>
       <div class="comparador-nicho-tabs">
         {tabs}
       </div>
       {checklists}
+      <p class="comparador-limit-msg" data-compare-limit-msg hidden></p>
     </div>
 
     <div id="comparadorResult" class="comparador-result" data-comparador-root>
@@ -654,12 +680,38 @@ def build_comparador():
 
 # ---------------------------------------------------------------- buying guide
 
+# Segmentos de la guía de compra: (id de sección, título, ids de producto en orden, intro editorial)
+GUIA_SEGMENTOS = [
+    ("principiantes", "Para empezar sin complicaciones",
+     ["bambu-lab-a1-mini", "flashforge-adventurer-5m", "creality-ender-3-v3-se"],
+     "Nivelación automática y mínima puesta a punto, para quien quiere imprimir el primer día sin trastear."),
+    ("menos-300", "Menos de 300€",
+     ["creality-ender-3-v3-se", "flashforge-adventurer-5m", "elegoo-neptune-4"],
+     "La Ender-3 V3 SE (177,99€) es además la única del catálogo por debajo de 200€."),
+    ("gama-media", "Gama media (300-450€)",
+     ["bambu-lab-a1-mini", "flashforge-ad5x", "flashforge-adventurer-5m-pro"],
+     "Un salto en velocidad, materiales o funciones (multicolor, boquilla intercambiable) sobre las de entrada."),
+    ("multicolor", "Multicolor",
+     ["flashforge-ad5x", "anycubic-kobra-3-max-combo"],
+     "Cambio de filamento automático, sin comprar un sistema AMS aparte."),
+    ("cerradas", "Impresoras cerradas",
+     ["flashforge-adventurer-5m", "flashforge-ad5x", "flashforge-adventurer-5m-pro", "bambu-lab-p1s", "creality-k1c"],
+     "Cuerpo cerrado: más silenciosas y necesarias si quieres imprimir PETG, ABS o materiales técnicos con estabilidad térmica."),
+    ("avanzada", "Gama alta / más avanzada",
+     ["anycubic-kobra-3-max-combo", "creality-k1c", "bambu-lab-p1s"],
+     "Para quien ya tiene experiencia y quiere más volumen, materiales técnicos o funciones de monitorización."),
+]
+
+
 def build_guide():
     impresoras = [p for p in PRODUCTOS if p["nicho"] == "impresora"]
+    by_id = {p["id"]: p for p in impresoras}
     demo_note = ""
     if impresoras and all(p.get("isDemo") for p in impresoras):
         demo_note = '<div class="demo-banner"><strong>Catálogo de ejemplo.</strong> Las recomendaciones de abajo son productos de muestra, pendientes de sustituir por modelos reales.</div>'
-    shortlist = "\n".join(f"""<article class="product-card">
+
+    def guide_card(p):
+        return f"""<article class="product-card">
       {'<span class="demo-ribbon">EJEMPLO</span>' if p.get("isDemo") else ""}
       {media_html(p)}
       <div class="product-card-body">
@@ -668,7 +720,23 @@ def build_guide():
         <p class="card-desc">{esc(p.get("ideal_para") or "")}</p>
         {buy_button_html(p)}
       </div>
-    </article>""" for p in impresoras)
+    </article>"""
+
+    segment_sections = ""
+    toc_items = ""
+    for seg_id, title, ids, intro in GUIA_SEGMENTOS:
+        items = [by_id[i] for i in ids if i in by_id]
+        if not items:
+            continue
+        cards = "\n".join(guide_card(p) for p in items)
+        segment_sections += f"""
+      <h2 id="{seg_id}">{esc(title)}</h2>
+      <p class="segmento-intro">{esc(intro)}</p>
+      <div class="catalog-grid">
+        {cards}
+      </div>
+"""
+        toc_items += f'<li><a href="#{seg_id}">{esc(title)}</a></li>'
 
     body = f"""<main id="contenido">
   <section class="page-hero container-wide">
@@ -681,18 +749,18 @@ def build_guide():
     <div class="prose">
       <h2>Qué mirar antes de comprar</h2>
       <ul>
-        <li><strong>Tamaño de cama:</strong> 220x220 mm cubre casi cualquier pieza doméstica.</li>
+        <li><strong>Tamaño de cama:</strong> 220x220 mm cubre casi cualquier pieza doméstica; más grande solo si ya sabes que lo necesitas.</li>
         <li><strong>Auto-nivelado:</strong> evita el ajuste manual, la causa más habitual de que fallen las primeras impresiones.</li>
+        <li><strong>Estructura abierta o cerrada:</strong> cerrada si vas a imprimir PETG, ABS o materiales técnicos con regularidad.</li>
         <li><strong>Cama caliente:</strong> imprescindible si más adelante quieres imprimir en PETG o ABS.</li>
         <li><strong>Nivel de ruido y comunidad:</strong> importa si la impresora va a estar en una zona habitada, y ayuda tener repuestos fáciles de encontrar.</li>
       </ul>
 
       {demo_note}
 
-      <h2>Nuestra selección</h2>
-      <div class="catalog-grid">
-        {shortlist}
-      </div>
+      <h2>Elige por lo que te importa</h2>
+      <ul class="guia-toc">{toc_items}</ul>
+      {segment_sections}
 
       <p style="margin-top:1.4rem;"><a href="comparador.html" style="color:var(--accent);font-weight:700;">→ Compáralas lado a lado en el comparador</a></p>
     </div>
@@ -707,6 +775,7 @@ def build_guide():
     <div class="faq-list">
       <details class="faq-item"><summary>¿FDM o resina para empezar?</summary><p>Para la gran mayoría de gente que empieza, FDM: es más barata de mantener y el filamento cuesta menos por pieza que la resina.</p></details>
       <details class="faq-item"><summary>¿Necesito auto-nivelado?</summary><p>No es obligatorio, pero facilita mucho la vida a quien empieza, evitando la causa más común de que fallen las primeras impresiones.</p></details>
+      <details class="faq-item"><summary>¿Abierta o cerrada?</summary><p>Abierta va bien para PLA y es más barata; cerrada aporta estabilidad térmica si vas a imprimir PETG, ABS o materiales técnicos con regularidad, y suele ser más silenciosa.</p></details>
     </div>
   </section>
 </main>"""
