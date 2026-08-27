@@ -419,6 +419,7 @@ table { border-collapse: collapse; width: 100%; }
 .comparador-nicho-tabs button svg, .icon-tab { width: 16px; height: 16px; flex: none; }
 .comparador-nicho-tabs button.is-active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .comparador-checklist { display: grid; gap: .6rem; grid-template-columns: 1fr; }
+.comparador-checklist[hidden] { display: none; }
 @media (min-width: 640px) { .comparador-checklist { grid-template-columns: repeat(2, 1fr); } }
 .comparador-check-item {
   display: flex; align-items: center; gap: .6rem; padding: .6rem .8rem; border: 1px solid var(--border);
