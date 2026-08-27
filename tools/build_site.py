@@ -318,6 +318,8 @@ def footer_html():
       <div>
         <h4>Legal</h4>
         <ul>
+          <li><a href="quienes-somos.html">Quiénes somos</a></li>
+          <li><a href="contacto.html">Contacto</a></li>
           <li><a href="como-elegimos.html">Cómo elegimos</a></li>
           <li><a href="privacidad.html">Privacidad</a></li>
           <li><a href="aviso-legal.html">Aviso legal</a></li>
@@ -885,6 +887,45 @@ def build_privacidad():
     )
 
 
+def build_quienes_somos():
+    body = """<main id="contenido">
+  <div class="container" style="padding-block:2.5rem;">
+    <h1 style="font-size:1.9rem; margin-bottom:1.2rem;">Quiénes somos</h1>
+    <div class="prose">
+      <p>Guía3D es un proyecto de Utilix dedicado a comparar impresoras 3D, filamento y accesorios para ayudarte a elegir sin perderte en especificaciones técnicas. Nace de una idea sencilla: reunir en un solo sitio, en español, las especificaciones reales de cada producto, sus reseñas verificadas y una puntuación editorial transparente, en vez de listas genéricas de "los 10 mejores" sin criterio detrás.</p>
+      <p><strong>Cómo trabajamos:</strong> cada ficha se construye a partir de la documentación oficial del fabricante y las reseñas verificadas de compradores en Amazon.es. Cuando no hemos probado un producto físicamente, lo decimos explícitamente en su ficha — no fingimos experiencia que no tenemos. Puedes leer el detalle completo de nuestra metodología en <a href="como-elegimos.html" style="color:var(--accent);">cómo elegimos y puntuamos los productos</a>.</p>
+      <p><strong>Cómo nos financiamos:</strong> Guía3D participa en el Programa de Afiliados de Amazon EU. Cuando compras a través de nuestros enlaces "Ver en Amazon", podemos recibir una pequeña comisión sin coste adicional para ti. Esto no influye en nuestras puntuaciones ni en qué productos recomendamos — nuestro criterio es el mismo se genere comisión o no. Más detalle en el <a href="aviso-legal.html" style="color:var(--accent);">aviso legal</a>.</p>
+      <p>¿Tienes alguna sugerencia, has detectado un error en una ficha, o quieres proponernos un producto? Escríbenos en la página de <a href="contacto.html" style="color:var(--accent);">contacto</a>.</p>
+    </div>
+  </div>
+</main>"""
+    return page_shell(
+        "Quiénes somos | Guía3D",
+        "Quiénes somos y cómo trabajamos en Guía3D: metodología, criterio editorial y cómo nos financiamos.",
+        "quienes-somos.html", body,
+        extra_head=breadcrumb_schema([("Guía3D", "index.html"), ("Quiénes somos", "quienes-somos.html")]),
+    )
+
+
+def build_contacto():
+    body = """<main id="contenido">
+  <div class="container" style="padding-block:2.5rem;">
+    <h1 style="font-size:1.9rem; margin-bottom:1.2rem;">Contacto</h1>
+    <div class="prose">
+      <p>¿Tienes una duda sobre algún producto, has encontrado un error o un enlace roto en alguna ficha, quieres proponernos un producto para el catálogo, o te interesa una colaboración? Escríbenos y te responderemos personalmente:</p>
+      <p style="font-size:1.3rem; margin:1.5rem 0;"><a href="mailto:hola@utilix.uno" style="color:var(--accent); font-weight:700;">hola@utilix.uno</a></p>
+      <p>Para saber más sobre quiénes somos y cómo elegimos los productos, visita <a href="quienes-somos.html" style="color:var(--accent);">quiénes somos</a> y <a href="como-elegimos.html" style="color:var(--accent);">cómo elegimos</a>.</p>
+    </div>
+  </div>
+</main>"""
+    return page_shell(
+        "Contacto | Guía3D",
+        "Contacta con el equipo de Guía3D para dudas, correcciones, sugerencias de productos o colaboraciones.",
+        "contacto.html", body,
+        extra_head=breadcrumb_schema([("Guía3D", "index.html"), ("Contacto", "contacto.html")]),
+    )
+
+
 def build_aviso_legal():
     body = """<main id="contenido">
   <div class="container" style="padding-block:2.5rem;">
@@ -918,10 +959,12 @@ def main():
     write("guia-mejor-impresora-2026.html", build_guide())
     write("ofertas.html", build_ofertas())
     write("como-elegimos.html", build_como_elegimos())
+    write("quienes-somos.html", build_quienes_somos())
+    write("contacto.html", build_contacto())
     write("privacidad.html", build_privacidad())
     write("aviso-legal.html", build_aviso_legal())
     write("lib/db.js", build_db_js())
-    print(f"Listo: {len(PRODUCTOS)} productos, {len(NICHOS)} categorías, {3 + len(NICHOS) + len(PRODUCTOS) + 3} páginas HTML.")
+    print(f"Listo: {len(PRODUCTOS)} productos, {len(NICHOS)} categorías, {3 + len(NICHOS) + len(PRODUCTOS) + 5} páginas HTML.")
 
 
 if __name__ == "__main__":
